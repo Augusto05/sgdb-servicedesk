@@ -1,4 +1,4 @@
-# SGDB - Service Desk & Ativos
+# SGDB - Service Desk & Controle de Ativos
 
 ![Status](https://img.shields.io/badge/Status-Concluído-success)
 ![Node](https://img.shields.io/badge/Node.js-18+-green)
@@ -8,11 +8,22 @@ Uma plataforma completa de Service Desk e Gestão de Ativos de Hardware focada e
 
 ## ✨ Principais Funcionalidades
 
-- **Design Premium**: Interface responsiva e moderna inspirada no conceito de *Glassmorphism*, com foco em UX para times técnicos.
-- **SLA Real**: Contagem regressiva em tempo real. O SLA só é ativado quando um técnico de fato assume o chamado.
-- **Recibos Virtuais (Nota Fiscal)**: Geração de recibos de atendimento detalhados em formato de cupom fiscal com exportação para imagem com um clique (via `html2canvas`).
-- **Arquitetura Multi-Tenant**: Gestão de múltiplas empresas clientes simultaneamente, onde cada usuário só acessa chamados de sua organização e técnicos visualizam todas sob sua responsabilidade.
-- **Gestão de Ativos**: Cadastro, rastreamento de tags patrimoniais e controle do ciclo de vida de hardwares atrelados aos chamados.
+- **Design Premium**: Interface responsiva e moderna inspirada no conceito de *Glassmorphism*, com foco em UX para times técnicos e paleta de cores para ambientes de baixa luminosidade (Dark Mode nativo).
+- **SLA Real**: Contagem regressiva em tempo real. O SLA só é ativado quando um técnico de fato assume o chamado, evitando que o tempo corra enquanto o ticket aguarda na fila geral.
+- **Recibos Virtuais (Nota Fiscal)**: Geração de recibos de atendimento detalhados em formato de cupom fiscal. O usuário pode baixar um PNG com todas as especificações do atendimento com apenas um clique.
+- **Arquitetura Multi-Tenant**: Gestão de múltiplas empresas clientes simultaneamente. Cada usuário comum interage apenas com o ecossistema da sua empresa, enquanto o "Administrador Global" e Técnicos possuem visão ampla.
+- **Gestão de Ativos (Inventário)**: Cadastro, rastreamento de tags patrimoniais e controle do ciclo de vida de hardwares atrelados aos chamados.
+- **Histórico e Linha do Tempo**: Cada chamado possui uma *timeline* imutável que registra todas as alterações de status, troca de técnicos e mensagens.
+
+## 📝 Fluxo de Abertura de Chamados
+
+O sistema foi desenhado para evitar gargalos entre a abertura e o atendimento:
+
+1. **Abertura Inteligente**: O usuário final acessa a plataforma, seleciona a Categoria do problema e a Prioridade (Crítica, Alta, Média, Baixa). O chamado nasce com o status **ABERTO**, mas *sem contagem de SLA*.
+2. **Fila de Espera**: O chamado fica disponível para qualquer Técnico ou Administrador na fila da organização.
+3. **Atribuição & Disparo de SLA**: Assim que um técnico "Assume o Chamado" (ou um admin o delega), o status muda para **EM_ATENDIMENTO**. O sistema calcula a data de expiração real (SLA) cruzando o peso da Categoria com a Prioridade escolhida, e o cronômetro começa a piscar em contagem regressiva para o técnico.
+4. **Resolução**: O técnico registra a solução e marca o chamado como **RESOLVIDO**. O timer é congelado.
+5. **Encerramento**: Após validação, o ticket é marcado como **FECHADO**.
 
 ## 🛠️ Stack Tecnológica
 
