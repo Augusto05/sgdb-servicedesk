@@ -1,0 +1,21 @@
+# PostgreSQL só para desenvolvimento local (dados em volume)
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sgdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - sgdb_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sgdb"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  sgdb_pgdata:

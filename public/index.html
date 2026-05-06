@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SGDB — Service Desk & Ativos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div id="app">
+    <section id="screen-login" class="screen" hidden>
+      <div class="login-card card">
+        <header class="login-header">
+          <div class="logo-mark">SG</div>
+          <div>
+            <h1>SGDB</h1>
+            <p class="muted">Service Desk e controle de ativos</p>
+          </div>
+        </header>
+        <form id="form-login" class="form-stack">
+          <label class="field">
+            <span>E-mail</span>
+            <input type="email" name="email" autocomplete="username" required placeholder="admin@empresa.local" />
+          </label>
+          <label class="field">
+            <span>Senha</span>
+            <input type="password" name="senha" autocomplete="current-password" required />
+          </label>
+          <p id="login-error" class="msg-error" role="alert" hidden></p>
+          <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+        </form>
+        <p class="hint muted">Seed: <code>SenhaForte!1</code> — usuários demo no README do projeto.</p>
+      </div>
+    </section>
+
+    <section id="screen-app" class="screen layout" hidden>
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <span class="logo-mark sm">SG</span>
+          <span>SGDB</span>
+        </div>
+        <nav class="nav-main" id="nav-main"></nav>
+        <div class="sidebar-user">
+          <div class="avatar" id="user-avatar">?</div>
+          <div class="sidebar-user-info">
+            <strong id="user-name">—</strong>
+            <span class="muted small" id="user-perfis">—</span>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-logout" title="Sair">Sair</button>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="main-header">
+          <h2 id="page-title">Chamados</h2>
+          <div class="main-header-actions" id="page-actions"></div>
+        </header>
+        <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+        <div id="page-content" class="page-content"></div>
+      </main>
+    </section>
+  </div>
+
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header class="modal-header">
+        <h3 id="modal-title">Detalhe</h3>
+        <button type="button" class="btn btn-icon" id="modal-close" aria-label="Fechar">×</button>
+      </header>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <script src="/js/app.js" defer></script>
+</body>
+</html>
