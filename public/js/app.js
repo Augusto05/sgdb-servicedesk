@@ -1100,11 +1100,12 @@
           .db-kpi-card {
             flex: 1;
             min-width: 200px;
-            background: #1e293b;
-            border: 1px solid #334155;
+            background: var(--bg-panel);
+            backdrop-filter: var(--glass);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow);
           }
           .db-kpi-title {
             font-size: 0.8rem;
@@ -1120,11 +1121,12 @@
             color: #f8fafc;
           }
           .db-panel {
-            background: #1e293b;
-            border: 1px solid #334155;
+            background: var(--bg-panel);
+            backdrop-filter: var(--glass);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow);
             display: flex;
             flex-direction: column;
           }
@@ -1147,9 +1149,9 @@
         <div class="db-dashboard">
           <!-- KPIs Row -->
           <div class="db-row">
-            <div class="db-kpi-card" style="border-top: 4px solid #10b981;">
+            <div class="db-kpi-card" style="border-top: 4px solid var(--accent);">
               <div class="db-kpi-title">Status</div>
-              <div class="db-kpi-value" style="color: #10b981;">${escapeHtml(metrics.status)}</div>
+              <div class="db-kpi-value" style="color: var(--accent);">${escapeHtml(metrics.status)}</div>
             </div>
             <div class="db-kpi-card" style="border-top: 4px solid #3b82f6;">
               <div class="db-kpi-title">Cache Hit Ratio</div>
@@ -1187,7 +1189,7 @@
                             <span style="color:#cbd5e1; font-family:monospace;">${escapeHtml(dt.relname)}</span>
                             <span style="color: #ef4444; font-weight:bold;">${dt.n_dead_tup} tuplas mortas</span>
                           </div>
-                          <div style="width: 100%; background: #0f172a; height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid #334155;">
+                          <div style="width: 100%; background: var(--bg-deep); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border);">
                             <div style="width: ${Math.min((dt.n_dead_tup / 100) * 100, 100)}%; background: #ef4444; height: 100%; box-shadow: 0 0 10px #ef4444;"></div>
                           </div>
                         </div>
@@ -1223,7 +1225,7 @@
                 <h4 class="db-panel-title"><span class="material-symbols-outlined">receipt_long</span> System Logs (Auditoria)</h4>
                 <div style="max-height: 250px; overflow-y: auto;">
                   <table class="db-table">
-                    <thead style="position: sticky; top: 0; background: #1e293b; z-index: 1;">
+                    <thead style="position: sticky; top: 0; background: var(--bg-panel); z-index: 1;">
                       <tr><th>Nível</th><th>Módulo</th><th>Mensagem</th><th>Data/Hora</th></tr>
                     </thead>
                     <tbody>
@@ -1243,7 +1245,7 @@
 
             <!-- Coluna Lateral -->
             <div class="db-col-side">
-              <div class="db-panel" style="background: linear-gradient(180deg, #1e293b, #0f172a); border-color: #3b82f6;">
+              <div class="db-panel" style="background: var(--bg-panel); backdrop-filter: var(--glass); border-color: #3b82f6;">
                 <h4 class="db-panel-title" style="color: #60a5fa;"><span class="material-symbols-outlined">cloud_download</span> Backup Management</h4>
                 <p style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5; margin-bottom: 1.5rem;">
                   Escolha entre extração estruturada (JSON) para integrações rápidas, ou SQL nativo contendo toda a DDL/DML.
@@ -1252,7 +1254,7 @@
                   <button class="btn btn-primary" id="btn-run-backup-json" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 0.95rem; border-radius: 8px; background: #3b82f6; color: #fff;">
                     <span class="material-symbols-outlined" style="font-size: 1.2rem;">data_object</span> Gerar JSON Snapshot
                   </button>
-                  <button class="btn btn-primary" id="btn-run-backup-sql" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 0.95rem; border-radius: 8px; background: #10b981; color: #fff;">
+                  <button class="btn btn-primary" id="btn-run-backup-sql" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 0.95rem; border-radius: 8px; background: var(--accent); color: #042f2e;">
                     <span class="material-symbols-outlined" style="font-size: 1.2rem;">terminal</span> Gerar Raw SQL Dump
                   </button>
                 </div>

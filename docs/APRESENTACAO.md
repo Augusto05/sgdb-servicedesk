@@ -1,51 +1,51 @@
-# Roteiro de Apresentação: SGDB - Service Desk & Banco de Dados
-
-Bem-vindo à apresentação técnica do **SGDB**, projetado não apenas como um sistema de Service Desk, mas como uma prova de conceito de governança, segurança e alta disponibilidade exigidas na disciplina de **Sistemas Gerenciadores de Banco de Dados (SGBD)**.
+# Plataforma Service Desk (Disciplina SGDB)
 
 ---
 
 ## 1. Visão Geral da Arquitetura (Multi-Tenant)
-O SGDB foi concebido nativamente como uma plataforma **Multi-Tenant** (Multilocatária). 
-Isso significa que uma única instalação (uma única base de dados) pode gerenciar diversas "Empresas" (clientes) simultaneamente, com isolamento lógico de dados.
+A arquitetura do sistema foi concebida nativamente sob o paradigma **Multi-Tenant** (Multilocatária), permitindo que uma única instância de banco de dados gerencie múltiplos clientes (Empresas) com isolamento lógico estrito.
 
-* **Isolamento de Visão**: Garantido via banco de dados e backend. As consultas (Queries) sempre forçam cláusulas `WHERE` vinculando as entidades ao `id_empresa` do usuário autenticado. Um usuário de suporte da "Empresa A" jamais verá os chamados ou o inventário da "Empresa B".
-* **Visão Panorâmica (Global)**: O Administrador Global e os Técnicos de TI conseguem visualizar, filtrar e atuar nos chamados de *todas* as empresas às quais foram explicitamente vinculados através da tabela de relacionamento `tecnico_empresa`.
+* **Isolamento de Visão (Row-Level/Logic Security)**: A segregação de dados é garantida via backend e banco de dados. As *queries* aplicam invariavelmente cláusulas `WHERE` restritivas ao `id_empresa` atrelado ao contexto do usuário autenticado, impedindo vazamento de dados entre locatários (Cross-Tenant Data Leakage).
+* **Visão Panorâmica Global**: Administradores Globais e Técnicos de Nível Superior (NOC) possuem capacidade de visualização e atuação trans-empresarial, mediada por relacionamentos *Many-to-Many* (`tecnico_empresa`), garantindo flexibilidade operacional sem comprometer a segurança.
 
-## 2. Central de Chamados (Help Desk) & Controle de SLA
-A fila de tickets utiliza transações (ACID) para garantir que a concorrência não permita que dois técnicos assumam o mesmo chamado simultaneamente.
+## 2. Orquestração de Chamados e Controle de SLA
+O pipeline de atendimento utiliza controle de concorrência e transações ACID para prevenir anomalias como *Lost Updates*, evitando que técnicos assumam tarefas concorrentes simultaneamente.
 
-* **Abertura Inteligente**: O chamado nasce com o status **ABERTO**, mas *sem contagem de SLA*.
-* **SLA Baseado em Triggers/Lógica**: O cronômetro de prazo máximo só é disparado no exato momento em que o técnico assume a responsabilidade. O banco utiliza uma *Stored Procedure* (`sp_atribuir_tecnico`) ou uma rota segura que atualiza o `id_tecnico` e calcula a data de expiração (`data_prazo_sla`) com base no nível de prioridade cadastrado.
-* **Timeline (Log de Eventos)**: Toda vez que o status do chamado muda, um gatilho/serviço empilha um evento na tabela `chamado_historico`. Essa tabela é apêndice apenas (insert-only), construindo uma trilha de auditoria imutável.
+* **Transições de Estado Inteligentes**: O ticket é instanciado com o estado inicial **ABERTO**, congelando o cálculo de SLA até a efetiva triagem.
+* **Mecanismos de Gatilho e SLA Dinâmico**: O relógio de SLA é acionado no exato momento da atribuição. O banco de dados invoca lógicas (via *Stored Procedures*) para calcular o *timestamp* de `data_prazo_sla`, parametrizado pelo nível de severidade/prioridade da ocorrência.
+* **Auditoria Imutável (Event Sourcing Logging)**: Transições de estado disparam *triggers* que empilham logs na tabela `chamado_historico`. Trata-se de uma estrutura *Append-Only*, estabelecendo uma trilha de auditoria (*Audit Trail*) à prova de adulteração.
 
-## 3. Gestão de Ativos (Inventário Unificado)
-Tão importante quanto resolver problemas é saber *onde* eles estão acontecendo.
-* **Modelo Entidade-Relacionamento**: A tabela `inventario` consolida equipamentos de hardware e software através de *constraints* (restrições de domínio).
-* **Vínculo Empregatício**: Todo hardware pode ser atribuído a uma Pessoa (Usuário) ou a um Departamento. Chaves Estrangeiras (`FK_usuario_inventario`) asseguram a integridade referencial.
+## 3. Gestão de Ativos (Configuration Management Database - CMDB)
+A plataforma incorpora um micro-CMDB para rastreabilidade de infraestrutura e correlação de incidentes.
+* **Integridade Relacional**: O esquema `inventario` unifica ativos de hardware e licenças de software empregando *Domain Constraints*.
+* **Mapeamento de Dependências**: A atribuição de hardware a usuários ou departamentos é fortemente tipada através de Chaves Estrangeiras (`FK`), assegurando a *Integridade Referencial* e impedindo a existência de ativos órfãos no sistema.
 
-## 4. Pilares de SGBD (O Diferencial do Projeto)
-Este projeto destaca a aplicação de três pilares fundamentais da disciplina de Banco de Dados: **Segurança, Confiabilidade e Monitoramento**.
+## 4. Governança e Monitoramento de SGBD (Foco do Projeto)
+O grande diferencial técnico deste projeto é a implementação nativa de ferramentas de observabilidade, extração de dados e segurança, cobrindo os pilares fundamentais da disciplina de Banco de Dados.
 
-### 4.1. Segurança (Auth & Proteção de Dados)
-* **Controle de Acesso Baseado em Perfis (RBAC)**: O esquema define quatro papéis (ADMIN, TECNICO, EMPRESA_ADMIN, USUARIO) limitando acessos em nível de API e de consultas SQL.
-* **Proteção Cibernética**: O sistema utiliza *Hash* com *Salt* (Bcrypt) para as senhas no banco, inviabilizando roubo de credenciais em caso de vazamento. A API utiliza *Rate Limit* para mitigar ataques de Força Bruta e *Helmet* (CSP) para prevenir injeção de scripts (XSS). O acesso é via token assinado digitalmente (JWT).
+### 4.1. Segurança (Autenticação e Criptografia)
+* **RBAC (Role-Based Access Control)**: Controle de acesso granular definido por perfis (ADMIN, TECNICO, EMPRESA_ADMIN, USUARIO), restringindo o escopo de execução das APIs e consultas SQL.
+* **Criptografia e Hardening**: Armazenamento de credenciais utilizando *Hashing* algorítmico com *Salt* (Bcrypt). Defesas ativas na camada de rede incluem *Rate Limiting* (mitigação de *Brute Force*) e políticas CSP (via Helmet) contra injeções XSS. Autorização *Stateless* viabilizada via tokens JWT.
 
-### 4.2. Confiabilidade e Backup (Disponibilidade)
-* **Rotina de Snapshots e Dual Backup**: Ao invés de depender de scripts operacionais (como o `pg_dump` via CMD, que sofre com problemas de PATH no Windows), o SGDB construiu seu próprio motor de extração **Duplo**.
-* **Modo 1: Snapshot JSON**: Com um clique no painel, o sistema gera um arquivo `JSON` leve, extraindo de forma estruturada as tabelas primárias (Empresas, Usuários, Chamados). Excelente para APIs e análise de dados.
-* **Modo 2: Raw SQL Dump (Nativo)**: O padrão ouro para SGBD. A aplicação lê dinamicamente os arquivos de infraestrutura (DDL), empacota Procedures, Triggers, RLS, Schema e varre a base de dados linha a linha (DML) para gerar milhares de comandos `INSERT INTO`. O resultado é um arquivo `.sql` mastigado, pronto para ser jogado em um novo servidor e restaurar a aplicação 100% como estava.
+### 4.2. Rotinas de Backup Dual (Alta Disponibilidade)
+Para contornar limitações de variáveis de ambiente (*PATH*) em sistemas operacionais hospedeiros (como ausência do executável `pg_dump`), a aplicação implementa seu próprio **Motor Duplo de Extração (Backup Engine)**, executado sob demanda ou de forma automatizada:
+* **Modo JSON (Snapshot Estruturado)**: Realiza uma serialização leve e estruturada das tabelas DML vitais (Empresas, Usuários, Chamados, Inventário) no formato JSON. Otimizado para integrações de API, migrações noSQL e auditorias rápidas.
+* **Modo Raw SQL (DML/DDL Dump Nativo)**: Abstração completa da engenharia reversa do banco. O motor consome os arquivos DDL originais de infraestrutura (Schemas, Procedures, Triggers) e realiza *Full Table Scans* para gerar dinamicamente milhares de instruções `INSERT INTO` (DML). O output é um script `.sql` autossuficiente e *Drop-In*, capaz de reidratar completamente uma nova instância PostgreSQL do zero.
 
-### 4.3. Monitoramento Avançado (Painel Cockpit / NOC)
-Um sistema de banco de dados não existe no escuro. O SGDB implementou um **Dashboard estilo Cockpit** exclusivo para o DBA (Administrador):
-* **Métricas em Tempo Real**: Consulta as *System Views* dinâmicas do PostgreSQL (`pg_stat_activity`, `pg_database_size`) para exibir a saúde da instância.
-* **Cache Hit Ratio**: Mede a eficiência do uso de memória RAM vs I/O de disco (quanto mais próximo a 100%, menos o banco está indo ao disco).
-* **Top Queries**: Uma tabela ao vivo que lista os Processos Ativos (PIDs), permitindo identificar gargalos e consultas lentas.
-* **Fragmentação (Dead Tuples)**: Alertas automáticos indicando tabelas que sofrem com *UPDATEs* constantes e precisam de desfragmentação (`VACUUM`).
+### 4.3. Monitoramento Avançado (Painel NOC / Cockpit DBA)
+Um dos principais artefatos da disciplina é a transparência operacional. Foi desenvolvido um **Cockpit Administrativo** que atua como um supervisor da saúde da instância PostgreSQL, consumindo diretamente suas *System Catalogs* e *Dynamic Statistics Views*. O painel supervisiona ativamente:
 
-### 4.4. Auditoria Imutável (System Logs)
-Além do histórico de chamados, o SGBD implementa a tabela `sistema_log` para registrar eventos vitais do sistema:
-* Registra execução de Backups (Sucesso ou Falha).
-* Atua de forma paralela e resiliente (se algo quebrar na infra, o log avisa qual módulo falhou com sua respectiva classificação: INFO, WARN, ERROR, CRITICAL).
+* **Consumo de Armazenamento**: Utilização das funções `pg_database_size('sgdb')` em conjunto com `pg_size_pretty()` para formatar em tempo real a volumetria da base de dados.
+* **Densidade de Conexões**: Contagem de *backends* (sessões) ativos na instância utilizando a view `pg_stat_activity`, medindo o esgotamento do pool de conexões.
+* **Eficiência de Memória (Cache Hit Ratio)**: Cálculo heurístico acessando a view `pg_stat_database` (`sum(blks_hit) * 100 / nullif(sum(blks_hit + blks_read), 0)`). Este indicador supervisiona a proporção de blocos lidos da memória RAM (Shared Buffers) em relação às leituras físicas em disco (I/O).
+* **Desfragmentação e Tuplas Mortas (Dead Tuples)**: Varredura da view `pg_stat_user_tables` para extrair o indicador `n_dead_tup`. O painel elenca o "Top 5" de tabelas mais fragmentadas (com alto volume de UPDATEs/DELETEs), servindo como alerta precoce para a necessidade de rotinas de `VACUUM` (Reclaim de espaço).
+* **Top Queries Ativas (Gargalos de Processamento)**: Monitoramento contínuo da view `pg_stat_activity` filtrando por `state != 'idle'`. A consulta captura os PIDs (*Process IDs*), o texto da instrução SQL executada (`query`) e o cálculo de duração exata (`now() - query_start`), listando as 5 consultas mais custosas/longas em execução, facilitando o *Troubleshooting* de bloqueios ou lentidão extrema.
+* **Volume Operacional**: Contagem absoluta de registros transacionais (total de logs no sistema e total de chamados operados).
+
+### 4.4. Telemetria e Logs de Sistema
+A tabela `sistema_log` funciona como o cérebro de auditoria passiva:
+* Consolida os *status codes* de execuções de backup (Sucesso, Falha, Metadados).
+* Categorização semântica de criticidade (INFO, WARN, ERROR, CRITICAL), permitindo alertas rápidos caso o motor de extração ou algum serviço de *background* entre em falha silenciosa.
 
 ---
-**SGDB** - Um ecossistema completo que une as melhores práticas de Service Desk corporativo à governança moderna de Banco de Dados.
+**Projeto de SGBD** - Uma prova de conceito que transcende o CRUD básico, entregando soluções reais de administração, resiliência de dados e monitoramento de performance em instâncias de banco de dados corporativas.
