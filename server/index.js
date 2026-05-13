@@ -12,7 +12,6 @@ const inventoryRoutes = require('./routes/inventory');
 const empresasRoutes = require('./routes/empresas');
 const usuariosRoutes = require('./routes/usuarios');
 const tecnicosRoutes = require('./routes/tecnicos');
-const softwareRoutes = require('./routes/software');
 
 if (!process.env.DATABASE_URL || !process.env.JWT_SECRET) {
   console.error('Defina DATABASE_URL e JWT_SECRET no arquivo .env');
@@ -75,7 +74,6 @@ app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/tecnicos', tecnicosRoutes);
 app.use('/api', catalogoRoutes);
 app.use('/api', inventoryRoutes);
-app.use('/api', softwareRoutes);
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 

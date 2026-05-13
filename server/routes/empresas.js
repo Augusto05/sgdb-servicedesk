@@ -45,4 +45,32 @@ router.post('/', requirePerfil('ADMIN'), async (req, res) => {
   }
 });
 
+router.put('/:id', requirePerfil('ADMIN'), async (req, res) => {
+  const idEmpresa = parseInt(req.params.id, 10);
+  const { nome_fantasia, cnpj, ativo } = req.body;
+  try {
+    await pool.query(
+      `UPDATE empresa SET 
+        nome_fantasia = COALESCE($1, nome_fantasia),
+        cnpj = COALESCE($2, cnpj),
+        ativo = COALESCE($3, ativo)
+       WHERE id_empresa = $4`,
+      [nome_fantasia, cnpj, ativo, idEmpresa]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ erro: e.message });
+  }
+});
+
+router.delete('/:id', requirePerfil('ADMIN'), async (req, res) => {
+  const idEmpresa = parseInt(req.params.id, 10);
+  try {
+    await pool.query('DELETE FROM empresa WHERE id_empresa = $1', [idEmpresa]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ erro: 'Falha ao deletar empresa. Pode haver dependências.' });
+  }
+});
+
 module.exports = router;

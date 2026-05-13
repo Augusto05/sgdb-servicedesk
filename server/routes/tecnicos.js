@@ -30,4 +30,33 @@ router.post('/:id/vincular', requirePerfil('ADMIN'), async (req, res) => {
   }
 });
 
+router.put('/:id', requirePerfil('ADMIN'), async (req, res) => {
+  const idTecnico = parseInt(req.params.id, 10);
+  const { especialidade, ativo } = req.body;
+  try {
+    await pool.query(
+      `UPDATE tecnico SET 
+        especialidade = COALESCE($1, especialidade),
+        ativo = COALESCE($2, ativo)
+       WHERE id_tecnico = $3`,
+      [especialidade, ativo, idTecnico]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ erro: e.message });
+  }
+});
+
+router.delete('/:id', requirePerfil('ADMIN'), async (req, res) => {
+  const idTecnico = parseInt(req.params.id, 10);
+  try {
+    // Delete from tecnico table. The foreign key constraint in usuario profile should be handled.
+    // However, maybe it's better to just deactivate or delete from tecnico table
+    await pool.query('DELETE FROM tecnico WHERE id_tecnico = $1', [idTecnico]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ erro: 'Falha ao deletar técnico. Pode haver dependências.' });
+  }
+});
+
 module.exports = router;

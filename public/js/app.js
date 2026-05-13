@@ -19,6 +19,11 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+  window.toggleInvFields = (val) => {
+    document.querySelectorAll('.hw-fields').forEach(el => el.style.display = val === 'HARDWARE' ? 'grid' : 'none');
+    document.querySelectorAll('.sw-fields').forEach(el => el.style.display = val === 'SOFTWARE' ? 'grid' : 'none');
+  };
+
   function loadSession() {
     state.token = localStorage.getItem(STORAGE_KEY);
     try {
@@ -181,6 +186,9 @@
     if (hasPerfil('ADMIN', 'EMPRESA_ADMIN')) {
       items.push({ id: 'usuarios', label: 'Usuários', icon: 'group' });
     }
+    if (hasPerfil('ADMIN')) {
+      items.push({ id: 'sla_pedidos', label: 'Solicitações SLA', icon: 'notification_important' });
+    }
     nav.innerHTML = items
       .map(
         (it) =>
@@ -207,7 +215,7 @@
     } else if (page === 'novo') {
       title.textContent = 'Novo chamado';
       await loadCatalogo();
-      await loadHardwareList();
+      await loadInventarioList();
       renderNovoChamado();
     } else if (page === 'inventario') {
       title.textContent = 'Inventário de hardware';
@@ -230,6 +238,9 @@
       actions.innerHTML = '<button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-tecnicos">Atualizar</button>';
       $('#btn-refresh-tecnicos')?.addEventListener('click', () => loadTecnicosList());
       await loadTecnicosList();
+    } else if (page === 'sla_pedidos') {
+      title.textContent = 'Solicitações de Mudança de SLA';
+      await loadSlaRequests();
     }
   }
 
@@ -250,9 +261,9 @@
         </div>
         <div class="table-wrap">
           <table class="data">
-            <thead><tr><th>ID</th><th>Empresa</th><th>CNPJ</th><th>Criado em</th></tr></thead>
+            <thead><tr><th>ID</th><th>Empresa</th><th>CNPJ</th><th>Criado em</th><th>Ações</th></tr></thead>
             <tbody>
-              ${empresas.map(e => `<tr><td data-label="ID">${e.id_empresa}</td><td data-label="Empresa">${escapeHtml(e.nome_fantasia)}</td><td data-label="CNPJ">${escapeHtml(e.cnpj)}</td><td data-label="Criado em">${formatDate(e.criado_em)}</td></tr>`).join('')}
+              ${empresas.map(e => `<tr><td data-label="ID">${e.id_empresa}</td><td data-label="Empresa">${escapeHtml(e.nome_fantasia)}</td><td data-label="CNPJ">${escapeHtml(e.cnpj)}</td><td data-label="Criado em">${formatDate(e.criado_em)}</td><td><button type="button" class="btn btn-sm btn-secondary btn-del-emp" data-id="${e.id_empresa}">Excluir</button></td></tr>`).join('')}
             </tbody>
           </table>
         </div>`;
@@ -265,6 +276,14 @@
           loadEmpresas();
         } catch (e) { toast(e.message, 'err'); }
       });
+      $$('.btn-del-emp').forEach(btn => btn.addEventListener('click', async () => {
+        if (!confirm('Deseja excluir esta empresa?')) return;
+        try {
+          await api(`/empresas/${btn.dataset.id}`, { method: 'DELETE' });
+          toast('Empresa excluída.');
+          loadEmpresas();
+        } catch (e) { toast(e.message, 'err'); }
+      }));
     } catch (e) { content.innerHTML = `<p class="msg-error">${escapeHtml(e.message)}</p>`; }
   }
 
@@ -295,6 +314,10 @@
               <label class="field"><span>Cargo</span><input name="cargo" placeholder="Ex: Financeiro" /></label>
             </div>
             <div class="grid-2">
+              <label class="field"><span>Foto (URL)</span><input name="foto_url" placeholder="https://..." /></label>
+              <label class="field"><span>Data Nascimento</span><input type="date" name="data_nascimento" /></label>
+            </div>
+            <div class="grid-2">
               <label class="field"><span>Perfil</span><select name="perfil_codigo" required>${perfilOpts}</select></label>
               ${hasPerfil('ADMIN') ? `<label class="field"><span>Empresa</span><select name="id_empresa" required><option value="">Selecione...</option>${empOpts}</select></label>` : ''}
             </div>
@@ -303,9 +326,9 @@
         </div>
         <div class="table-wrap">
           <table class="data">
-            <thead><tr><th>Nome</th><th>E-mail</th><th>Cargo</th><th>Empresa</th><th>Perfis</th></tr></thead>
+            <thead><tr><th>Nome</th><th>E-mail</th><th>Empresa</th><th>Perfis</th><th>Ações</th></tr></thead>
             <tbody>
-              ${usuarios.map(u => `<tr><td data-label="Nome">${escapeHtml(u.nome_usuario)}</td><td data-label="E-mail">${escapeHtml(u.email)}</td><td data-label="Cargo">${escapeHtml(u.cargo)}</td><td data-label="Empresa">${escapeHtml(u.empresa)}</td><td data-label="Perfis">${(u.perfis || []).join(', ')}</td></tr>`).join('')}
+              ${usuarios.map(u => `<tr><td data-label="Nome">${escapeHtml(u.nome_usuario)}</td><td data-label="E-mail">${escapeHtml(u.email)}</td><td data-label="Empresa">${escapeHtml(u.empresa)}</td><td data-label="Perfis">${(u.perfis || []).join(', ')}</td><td><button type="button" class="btn btn-sm btn-secondary btn-del-user" data-id="${u.id_usuario}">Excluir</button></td></tr>`).join('')}
             </tbody>
           </table>
         </div>`;
@@ -319,6 +342,14 @@
           loadUsuarios();
         } catch (e) { toast(e.message, 'err'); }
       });
+      $$('.btn-del-user').forEach(btn => btn.addEventListener('click', async () => {
+        if (!confirm('Deseja excluir este usuário?')) return;
+        try {
+          await api(`/usuarios/${btn.dataset.id}`, { method: 'DELETE' });
+          toast('Usuário excluído.');
+          loadUsuarios();
+        } catch (e) { toast(e.message, 'err'); }
+      }));
     } catch (e) { content.innerHTML = `<p class="msg-error">${escapeHtml(e.message)}</p>`; }
   }
 
@@ -345,9 +376,9 @@
         </div>
         <div class="table-wrap">
           <table class="data">
-            <thead><tr><th>ID</th><th>Técnico</th><th>E-mail</th><th>Empresas Atendidas</th></tr></thead>
+            <thead><tr><th>ID</th><th>Técnico</th><th>E-mail</th><th>Empresas Atendidas</th><th>Ações</th></tr></thead>
             <tbody>
-              ${tecnicos.map(t => `<tr><td data-label="ID">${t.id_tecnico}</td><td data-label="Técnico">${escapeHtml(t.nome_usuario)}</td><td data-label="E-mail">${escapeHtml(t.email)}</td><td data-label="Empresas">${(t.empresas || []).join(', ') || '<span class="muted">Nenhuma</span>'}</td></tr>`).join('')}
+              ${tecnicos.map(t => `<tr><td data-label="ID">${t.id_tecnico}</td><td data-label="Técnico">${escapeHtml(t.nome_usuario)}</td><td data-label="E-mail">${escapeHtml(t.email)}</td><td data-label="Empresas">${(t.empresas || []).join(', ') || '<span class="muted">Nenhuma</span>'}</td><td><button type="button" class="btn btn-sm btn-secondary btn-del-tec" data-id="${t.id_tecnico}">Excluir</button></td></tr>`).join('')}
             </tbody>
           </table>
         </div>`;
@@ -360,6 +391,14 @@
           loadTecnicosList();
         } catch (e) { toast(e.message, 'err'); }
       });
+      $$('.btn-del-tec').forEach(btn => btn.addEventListener('click', async () => {
+        if (!confirm('Deseja excluir este técnico? (Isso não apaga o usuário, apenas seu perfil técnico e vínculos)')) return;
+        try {
+          await api(`/tecnicos/${btn.dataset.id}`, { method: 'DELETE' });
+          toast('Técnico excluído.');
+          loadTecnicosList();
+        } catch (e) { toast(e.message, 'err'); }
+      }));
     } catch (e) { content.innerHTML = `<p class="msg-error">${escapeHtml(e.message)}</p>`; }
   }
 
@@ -376,8 +415,8 @@
     state.tecnicos = await api('/tecnicos');
   }
 
-  async function loadHardwareList() {
-    state.hardware = await api('/inventario/hardware');
+  async function loadInventarioList() {
+    state.inventario = await api('/inventario');
   }
 
   async function loadChamados() {
@@ -433,14 +472,14 @@
     }
   }
 
-  async function loadInventario() {
+    async function loadInventario() {
     const content = $('#page-content');
     content.innerHTML = '<p class="muted">Carregando…</p>';
     try {
-      state.hardware = await api('/inventario/hardware');
+      state.inventario = await api('/inventario');
       
       let formHtml = '';
-      if (hasPerfil('ADMIN', 'TECNICO')) {
+      if (hasPerfil('ADMIN', 'TECNICO', 'EMPRESA_ADMIN')) {
         const [tipos, fabricantes, empresas] = await Promise.all([
           api('/inventario/tipos'),
           api('/inventario/fabricantes'),
@@ -453,21 +492,35 @@
         
         formHtml = `
           <div class="card form-panel">
-            <h4 style="margin-top:0">Cadastrar Novo Patrimônio</h4>
-            <form id="form-novo-hw" class="form-stack">
+            <h4 style="margin-top:0">Cadastrar Novo Item no Inventário</h4>
+            <form id="form-novo-inv" class="form-stack">
               <div class="grid-2">
                 <label class="field"><span>Empresa</span><select name="id_empresa" required><option value="">Selecione...</option>${optEmps}</select></label>
-                <label class="field"><span>Tipo</span><select name="id_tipo_hardware" required><option value="">Selecione...</option>${optTipos}</select></label>
+                <label class="field"><span>Categoria do Item</span><select name="tipo_item" id="sel-tipo-inv" required><option value="HARDWARE">Hardware</option><option value="SOFTWARE">Software</option></select></label>
               </div>
               <div class="grid-2">
                 <label class="field"><span>Fabricante</span><select name="id_fabricante" required><option value="">Selecione...</option>${optFabs}</select></label>
-                <label class="field"><span>Modelo</span><input name="modelo" required /></label>
+                <label class="field"><span>Nome/Modelo</span><input name="nome_modelo" required /></label>
               </div>
-              <div class="grid-2">
-                <label class="field"><span>Nº de Série</span><input name="numero_serie" /></label>
+              <!-- Hardware Fields -->
+              <div class="grid-2 hw-fields">
+                <label class="field"><span>Tipo de Hardware</span><select name="id_tipo_hardware"><option value="">Selecione...</option>${optTipos}</select></label>
                 <label class="field"><span>TAG Patrimônio</span><input name="patrimonio_tag" /></label>
               </div>
-              <button type="submit" class="btn btn-primary">Cadastrar Hardware</button>
+              <div class="grid-2 hw-fields">
+                <label class="field"><span>Nº de Série</span><input name="numero_serie" /></label>
+                <label class="field"><span>Data Aquisição</span><input type="date" name="data_aquisicao" /></label>
+              </div>
+              <!-- Software Fields -->
+              <div class="grid-2 sw-fields" style="display:none">
+                <label class="field"><span>Versão</span><input name="versao" /></label>
+                <label class="field"><span>Chave de Licença</span><input name="chave_licenca" /></label>
+              </div>
+              <div class="grid-2 sw-fields" style="display:none">
+                <label class="field"><span>Data Expiração</span><input type="date" name="data_expiracao" /></label>
+              </div>
+              
+              <button type="submit" class="btn btn-primary">Cadastrar Item</button>
             </form>
           </div>
         `;
@@ -482,49 +535,52 @@
                 ${hasPerfil('ADMIN') ? '<th>Empresa</th>' : ''}
                 <th>Tipo</th>
                 <th>Fabricante</th>
-                <th>Modelo</th>
-                <th>Patrimônio</th>
-                <th>Série</th>
+                <th>Nome/Modelo</th>
+                <th>Detalhes (Tag/Série/Versão)</th>
                 <th>Status</th>
-                ${hasPerfil('ADMIN', 'TECNICO') ? '<th>Ações</th>' : ''}
+                ${hasPerfil('ADMIN', 'TECNICO', 'EMPRESA_ADMIN') ? '<th>Ações</th>' : ''}
               </tr>
             </thead>
             <tbody id="hw-tbody">
-              ${state.hardware.map(h => `
+              ${state.inventario.map(h => `
                 <tr>
-                  <td data-label="ID">${h.id_hardware}</td>
+                  <td data-label="ID">${h.id_inventario}</td>
                   ${hasPerfil('ADMIN') ? `<td data-label="Empresa">${escapeHtml(h.empresa)}</td>` : ''}
-                  <td data-label="Tipo">${escapeHtml(h.tipo)}</td>
+                  <td data-label="Tipo"><span class="badge ${h.tipo_item === 'HARDWARE' ? 'badge-hardware' : 'badge-software'}">${escapeHtml(h.tipo_item)}</span></td>
                   <td data-label="Fabricante">${escapeHtml(h.fabricante)}</td>
-                  <td data-label="Modelo">${escapeHtml(h.modelo)}</td>
-                  <td data-label="Patrimônio"><code>${escapeHtml(h.patrimonio_tag || '—')}</code></td>
-                  <td data-label="Série" class="muted small">${escapeHtml(h.numero_serie || '—')}</td>
-                  <td data-label="Status">${escapeHtml(h.status_patrimonio)}</td>
-                  ${hasPerfil('ADMIN', 'TECNICO') ? `<td><button type="button" class="btn btn-sm btn-secondary btn-baixar" data-id="${h.id_hardware}">Baixar</button></td>` : ''}
+                  <td data-label="Nome/Modelo">${escapeHtml(h.nome_modelo)}</td>
+                  <td data-label="Detalhes" class="muted small">${escapeHtml(h.tipo_item === 'HARDWARE' ? (h.patrimonio_tag || h.numero_serie || '—') : (h.versao || '—'))}</td>
+                  <td data-label="Status">${escapeHtml(h.status)}</td>
+                  ${hasPerfil('ADMIN', 'TECNICO', 'EMPRESA_ADMIN') ? `<td><button type="button" class="btn btn-sm btn-secondary btn-del-inv" data-id="${h.id_inventario}">Deletar</button></td>` : ''}
                 </tr>`).join('')}
             </tbody>
           </table>
-          ${state.hardware.length === 0 ? '<div class="empty-state">Nenhum equipamento listado.</div>' : ''}
+          ${state.inventario.length === 0 ? '<div class="empty-state">Nenhum equipamento listado.</div>' : ''}
         </div>`;
       
-      if (hasPerfil('ADMIN', 'TECNICO')) {
-        $('#form-novo-hw').addEventListener('submit', async ev => {
+      if (hasPerfil('ADMIN', 'TECNICO', 'EMPRESA_ADMIN')) {
+        $('#sel-tipo-inv')?.addEventListener('change', (e) => toggleInvFields(e.target.value));
+        toggleInvFields($('#sel-tipo-inv')?.value || 'HARDWARE');
+
+        $('#form-novo-inv')?.addEventListener('submit', async ev => {
           ev.preventDefault();
           const fd = new FormData(ev.target);
           const body = Object.fromEntries(fd.entries());
+          Object.keys(body).forEach(k => { if (body[k] === '') delete body[k]; });
+          
           try {
-            await api('/inventario/hardware', { method: 'POST', body });
-            toast('Hardware cadastrado.');
+            await api('/inventario', { method: 'POST', body });
+            toast('Item cadastrado.');
             loadInventario();
           } catch (e) { toast(e.message, 'err'); }
         });
         
-        $$('.btn-baixar').forEach(btn => {
+        $$('.btn-del-inv').forEach(btn => {
           btn.addEventListener('click', async () => {
-            if (!confirm('Deseja dar baixa neste hardware?')) return;
+            if (!confirm('Deseja deletar este item do inventário?')) return;
             try {
-              await api(`/inventario/hardware/${btn.dataset.id}/baixar`, { method: 'POST' });
-              toast('Hardware baixado com sucesso.');
+              await api(`/inventario/${btn.dataset.id}`, { method: 'DELETE' });
+              toast('Item deletado com sucesso.');
               loadInventario();
             } catch(e) { toast(e.message, 'err'); }
           });
@@ -535,11 +591,58 @@
     }
   }
 
+  async function loadSlaRequests() {
+    const content = $('#page-content');
+    content.innerHTML = '<p class="muted">Carregando…</p>';
+    try {
+      const requests = await api('/chamados/solicitacoes-sla');
+      if (requests.length === 0) {
+        content.innerHTML = '<div class="empty-state">Nenhuma solicitação pendente.</div>';
+        return;
+      }
+      content.innerHTML = `
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Chamado</th><th>Técnico</th><th>Novo Prazo</th><th>Motivo</th><th>Ações</th></tr></thead>
+            <tbody>
+              ${requests.map(s => `
+                <tr>
+                  <td>#${s.id_chamado} - ${escapeHtml(s.chamado_titulo)}</td>
+                  <td>${escapeHtml(s.tecnico_nome)}</td>
+                  <td>${formatDate(s.nova_data_prazo)}</td>
+                  <td>${escapeHtml(s.motivo)}</td>
+                  <td>
+                    <button class="btn btn-sm btn-primary btn-app-sla" data-id="${s.id_solicitacao}" data-approved="true">Aprovar</button>
+                    <button class="btn btn-sm btn-secondary btn-app-sla" data-id="${s.id_solicitacao}" data-approved="false">Rejeitar</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      
+      $$('.btn-app-sla').forEach(btn => btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const approved = btn.dataset.approved === 'true';
+        const motivo = prompt(`Motivo da ${approved ? 'aprovação' : 'rejeição'}:`);
+        if (motivo === null) return;
+        try {
+          await api(`/chamados/solicitacoes-sla/${id}/responder`, { method: 'POST', body: { aprovado: approved, motivo_resposta: motivo } });
+          toast(`Solicitação ${approved ? 'aprovada' : 'rejeitada'}.`);
+          loadSlaRequests();
+        } catch (e) { toast(e.message, 'err'); }
+      }));
+    } catch (e) {
+      content.innerHTML = `<p class="msg-error">${escapeHtml(e.message)}</p>`;
+    }
+  }
+
+
   function renderNovoChamado() {
     const { categorias, prioridades } = state.catalogo;
-    const hwOpts =
-      '<option value="">— Nenhum vínculo de Hardware —</option>' +
-      (state.hardware || []).map((h) => `<option value="${h.id_hardware}">#${h.id_hardware} ${escapeHtml(h.modelo)}</option>`).join('');
+    const invOpts =
+      '<option value="">— Nenhum item do inventário —</option>' +
+      (state.inventario || []).map((h) => `<option value="${h.id_inventario}">[${h.tipo_item === 'HARDWARE' ? 'HW' : 'SW'}] #${h.id_inventario} ${escapeHtml(h.nome_modelo)}</option>`).join('');
     
     $('#page-content').innerHTML = `
       <div class="card form-panel">
@@ -570,8 +673,8 @@
           </div>
           <div class="grid-2">
             <label class="field">
-              <span>Hardware relacionado (opcional)</span>
-              <select name="id_hardware_rel">${hwOpts}</select>
+              <span>Item de Inventário relacionado (opcional)</span>
+              <select name="id_inventario">${invOpts}</select>
             </label>
           </div>
           <div class="form-actions">
@@ -587,7 +690,7 @@
         descricao: fd.get('descricao'),
         id_categoria: Number(fd.get('id_categoria')),
         id_prioridade: Number(fd.get('id_prioridade')),
-        id_hardware_rel: fd.get('id_hardware_rel') ? Number(fd.get('id_hardware_rel')) : null,
+        id_inventario: fd.get('id_inventario') ? Number(fd.get('id_inventario')) : null,
       };
       try {
         const r = await api('/chamados', { method: 'POST', body });
@@ -598,15 +701,6 @@
         toast(e.message, 'err');
       }
     });
-  }
-
-  function escapeHtml(s) {
-    if (s == null) return '';
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 
   async function openChamadoModal(id) {
@@ -625,20 +719,47 @@
       const podeAtuar = canTech && !fechadoOuResolvido;
 
       const tecOpts = state.tecnicos
-        .map((t) => `<option value="${t.id_tecnico}">#${t.id_tecnico} ${escapeHtml(t.nome_usuario)}</option>`)
+        .map((t) => `<option value="${t.id_tecnico}">#${t.id_tecnico} ${escapeHtml(t.nome_usuario)}\</option>`)
         .join('');
+
+      // Helper function to render ID Card
+      const renderIDCard = (name, role, emp, foto, nasc) => {
+        const age = nasc ? Math.floor((new Date() - new Date(nasc).getTime()) / 3.15576e+10) : 'N/A';
+        const photoUrl = foto || 'https://via.placeholder.com/64?text=' + name.charAt(0);
+        return `<div class="id-card-popup">
+          <div class="id-card-header"></div>
+          <div class="id-card-body">
+            <img src="${photoUrl}" alt="${escapeHtml(name)}" class="id-card-photo" />
+            <div class="id-card-info">
+              <strong>${escapeHtml(name)}</strong>
+              <span class="muted small">${role}</span>
+              <span class="muted small">Empresa: ${escapeHtml(emp || 'N/A')}</span>
+              <span class="muted small">Idade: ${age}</span>
+            </div>
+          </div>
+        </div>`;
+      };
 
       body.innerHTML = `
         <dl class="detail-grid">
           <div class="detail-item"><dt>Status</dt><dd><span class="${badgeClass(c.status_codigo)}">${escapeHtml(c.status_codigo)}</span></dd></div>
           <div class="detail-item"><dt>Prioridade</dt><dd>${escapeHtml(c.prioridade)}</dd></div>
           <div class="detail-item"><dt>Categoria</dt><dd>${escapeHtml(c.categoria)}</dd></div>
-          <div class="detail-item"><dt>Solicitante</dt><dd>${escapeHtml(c.solicitante_nome)}</dd></div>
-          <div class="detail-item"><dt>Técnico</dt><dd>${escapeHtml(c.tecnico_nome || '—')}</dd></div>
+          <div class="detail-item has-popup">
+            <dt>Solicitante</dt>
+            <dd class="popup-trigger">${escapeHtml(c.solicitante_nome)}
+              ${renderIDCard(c.solicitante_nome, 'Solicitante', c.solicitante_empresa_nome, c.solicitante_foto, c.solicitante_nasc)}
+            </dd>
+          </div>
+          <div class="detail-item has-popup">
+            <dt>Técnico</dt>
+            <dd class="popup-trigger">${escapeHtml(c.tecnico_nome || '—')}
+              ${c.tecnico_nome ? renderIDCard(c.tecnico_nome, 'Técnico', c.tecnico_empresa_nome, c.tecnico_foto, c.tecnico_nasc) : ''}
+            </dd>
+          </div>
           <div class="detail-item"><dt>Abertura</dt><dd>${formatDate(c.data_abertura)}</dd></div>
           <div class="detail-item"><dt>SLA / Prazo</dt><dd>${renderSLA(c.data_prazo_sla, c.status_codigo)}</dd></div>
-          <div class="detail-item"><dt>Resolução</dt><dd>${formatDate(c.data_resolucao)}</dd></div>
-          <div class="detail-item"><dt>Fechamento</dt><dd>${formatDate(c.data_fechamento)}</dd></div>
+          <div class="detail-item"><dt>Item</dt><dd>${c.inventario_nome ? `[${c.inventario_tipo === 'HARDWARE' ? 'HW' : 'SW'}] ${escapeHtml(c.inventario_nome)}` : '—'}</dd></div>
         </dl>
         <h4 class="muted small" style="margin:0 0 0.5rem">Descrição</h4>
         <div class="ticket-content">${escapeHtml(c.descricao)}</div>
@@ -689,7 +810,53 @@
             </div>`
             )
             .join('')}
-        </div>`;
+        </div>
+        
+        ${podeAtuar ? `
+        <div class="action-panel" style="margin-top:2rem; padding-top:1.5rem; border-top:1px dashed var(--border)">
+          <h4 class="muted small" style="margin-bottom:1rem">Ações do Técnico</h4>
+          
+          <form id="form-add-hist" class="form-stack" style="margin-bottom:1.5rem">
+            <label class="field">
+              <span>Adicionar Registro ao Histórico</span>
+              <textarea name="mensagem" required rows="2" placeholder="Tentativa de contato, análise, etc."></textarea>
+            </label>
+            <div class="grid-2">
+              <label class="field">
+                <span>Tipo do Evento</span>
+                <select name="tipo_evento">
+                  <option value="COMENTARIO">Comentário</option>
+                  <option value="TENTATIVA_CONTATO">Tentativa de Contato</option>
+                  <option value="ANALISE">Análise Técnica</option>
+                  <option value="IMPEDIMENTO">Impedimento/Bloqueio</option>
+                </select>
+              </label>
+              <div style="display:flex; align-items:flex-end;">
+                <button type="submit" class="btn btn-secondary">Adicionar</button>
+              </div>
+            </div>
+          </form>
+
+          ${hasPerfil('TECNICO') && !hasPerfil('ADMIN') ? `
+          <form id="form-req-sla" class="form-stack">
+            <label class="field">
+              <span>Solicitar Mudança de SLA</span>
+            </label>
+            <div class="grid-2">
+              <label class="field">
+                <span>Novo Prazo</span>
+                <input type="datetime-local" name="nova_data_prazo" required />
+              </label>
+              <label class="field">
+                <span>Motivo</span>
+                <input name="motivo" required placeholder="Justificativa" />
+              </label>
+            </div>
+            <div><button type="submit" class="btn btn-secondary">Solicitar</button></div>
+          </form>` : ''}
+        </div>
+        ` : ''}
+        `;
       
       startSLAUpdater();
 
@@ -746,6 +913,37 @@
           toast('Chamado fechado.');
           overlay.hidden = true;
           loadChamados();
+        } catch (e) {
+          toast(e.message, 'err');
+        }
+      });
+      
+      $('#form-add-hist')?.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const fd = new FormData(ev.target);
+        try {
+          await api(`/chamados/${id}/historico`, {
+            method: 'POST',
+            body: { mensagem: fd.get('mensagem'), tipo_evento: fd.get('tipo_evento') },
+          });
+          toast('Registro adicionado.');
+          openChamadoModal(id);
+        } catch (e) {
+          toast(e.message, 'err');
+        }
+      });
+
+      $('#form-req-sla')?.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const fd = new FormData(ev.target);
+        try {
+          const dateStr = fd.get('nova_data_prazo') + ':00.000Z'; // basic ISO conversion
+          await api(`/chamados/${id}/solicitar-sla`, {
+            method: 'POST',
+            body: { nova_data_prazo: new Date(fd.get('nova_data_prazo')).toISOString(), motivo: fd.get('motivo') },
+          });
+          toast('Solicitação enviada.');
+          openChamadoModal(id);
         } catch (e) {
           toast(e.message, 'err');
         }
@@ -859,4 +1057,13 @@
   } else {
     showScreen('login');
   }
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
 })();

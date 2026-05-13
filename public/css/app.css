@@ -624,3 +624,98 @@ table.data tbody tr:hover {
   color: var(--accent);
   font-weight: 500;
 }
+
+/* New Badges */
+.badge-hardware { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+.badge-software { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+/* ID Card Popup (Premium Design) */
+.has-popup { position: relative; }
+.popup-trigger { 
+  cursor: pointer; 
+  text-decoration: underline; 
+  text-decoration-style: dashed; 
+  text-underline-offset: 4px;
+}
+.popup-trigger:hover .id-card-popup {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.id-card-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 10px;
+  width: 280px;
+  background: rgba(18, 24, 36, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+  pointer-events: none; /* Let clicks pass through if needed, or remove if interactive */
+}
+
+.id-card-popup::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  width: 12px;
+  height: 12px;
+  background: rgba(18, 24, 36, 0.95);
+  border-top: 1px solid rgba(45, 212, 191, 0.3);
+  border-left: 1px solid rgba(45, 212, 191, 0.3);
+  transform: rotate(45deg);
+}
+
+.id-card-header {
+  height: 60px;
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), transparent);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.id-card-body {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: -30px;
+}
+
+.id-card-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #121824;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  margin-bottom: 0.75rem;
+  background: #1a2130;
+}
+
+.id-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.id-card-info strong {
+  font-family: var(--font);
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.id-card-info .muted {
+  font-family: var(--font);
+  color: #94a3b8;
+}
