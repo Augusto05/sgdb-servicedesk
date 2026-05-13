@@ -1,0 +1,342 @@
+{
+  "metadata": {
+    "gerado_em": "2026-05-13T01:10:43.499Z",
+    "versao_sgdb": "1.0.0"
+  },
+  "data": {
+    "empresa": [
+      {
+        "id_empresa": 1,
+        "nome_fantasia": "Global MSP - Empresa Matriz",
+        "cnpj": "00.000.000/0001-00",
+        "ativo": true,
+        "criado_em": "2026-05-04T23:38:33.483Z"
+      },
+      {
+        "id_empresa": 2,
+        "nome_fantasia": "Cliente Alfa S.A.",
+        "cnpj": "11.111.111/0001-11",
+        "ativo": true,
+        "criado_em": "2026-05-04T23:38:33.483Z"
+      },
+      {
+        "id_empresa": 3,
+        "nome_fantasia": "Cliente Beta S.A.",
+        "cnpj": "22.222.222/0001-22",
+        "ativo": true,
+        "criado_em": "2026-05-04T23:38:33.483Z"
+      }
+    ],
+    "usuario": [
+      {
+        "id_usuario": 1,
+        "nome_usuario": "Administrador Global",
+        "cargo": "Gestor MSP",
+        "data_ingresso": "2026-05-04T03:00:00.000Z",
+        "id_empresa": 1,
+        "email": "admin@msp.local",
+        "senha_hash": "$2a$06$pzUXNE9rQupsiYvHU/taKOQ6EcN/FayB1.B7KTebQDIVqAfK5lNgO",
+        "ativo": true,
+        "criado_em": "2026-05-04T23:38:33.495Z"
+      },
+      {
+        "id_usuario": 2,
+        "nome_usuario": "Maria Técnica",
+        "cargo": "Analista de Suporte",
+        "data_ingresso": "2026-05-04T03:00:00.000Z",
+        "id_empresa": 1,
+        "email": "tecnico@msp.local",
+        "senha_hash": "$2a$06$NKOeEk0gy4eG0AOqWnJ6CukFnbtbUDBjj8lb/Jn0yTxGED1/SFxke",
+        "ativo": true,
+        "criado_em": "2026-05-04T23:38:33.502Z"
+      },
+      {
+        "id_usuario": 3,
+        "nome_usuario": "Carlos Gerente",
+        "cargo": "Gerente TI Cliente",
+        "data_ingresso": "2026-05-04T03:00:00.000Z",
+        "id_empresa": 2,
+        "email": "admin@alfa.local",
+        "senha_hash": "$2a$06$gRCQKkLXHaOknDs6uz5O7uCpVtoyqgLi0p1ez9rpo9DXYmAwL89yu",
+        "ativo": true,
+        "criado_em": "2026-05-04T23:38:33.521Z"
+      },
+      {
+        "id_usuario": 4,
+        "nome_usuario": "João Solicitante",
+        "cargo": "Analista Financeiro",
+        "data_ingresso": "2026-05-04T03:00:00.000Z",
+        "id_empresa": 2,
+        "email": "joao@alfa.local",
+        "senha_hash": "$2a$06$s7/i8iVFnh460CTytOwfZ.JNfKyndABr4toJPbv7IkdliZn39cXYu",
+        "ativo": true,
+        "criado_em": "2026-05-04T23:38:33.539Z"
+      },
+      {
+        "id_usuario": 6,
+        "nome_usuario": "Felipe Tecnico",
+        "cargo": "Tecnico",
+        "data_ingresso": "2026-05-07T03:00:00.000Z",
+        "id_empresa": 1,
+        "email": "tecnico@gmail.com",
+        "senha_hash": "$2a$06$KVUmlNGUuIiBGPea3jlsCO2LhOWDdgvF24wfHA7XMeoBkce65qHu.",
+        "ativo": true,
+        "criado_em": "2026-05-07T22:51:01.483Z"
+      }
+    ],
+    "inventario": [
+      {
+        "id_inventario": 1,
+        "tipo_item": "HARDWARE",
+        "id_empresa": 2,
+        "id_fabricante": 1,
+        "nome_modelo": "Latitude 5440",
+        "id_tipo_hardware": 1,
+        "numero_serie": "SN-ALFA-001",
+        "patrimonio_tag": "PAT-ALFA-001",
+        "data_aquisicao": null,
+        "valor_aquisicao": null,
+        "versao": null,
+        "chave_licenca": null,
+        "data_expiracao": null,
+        "status": "BAIXADO",
+        "criado_em": "2026-05-04T23:38:33.635Z"
+      },
+      {
+        "id_inventario": 2,
+        "tipo_item": "HARDWARE",
+        "id_empresa": 3,
+        "id_fabricante": 4,
+        "nome_modelo": "Apple Screen Pro",
+        "id_tipo_hardware": 3,
+        "numero_serie": "12939123",
+        "patrimonio_tag": "APP-STG-001",
+        "data_aquisicao": null,
+        "valor_aquisicao": null,
+        "versao": null,
+        "chave_licenca": null,
+        "data_expiracao": null,
+        "status": "DISPONIVEL",
+        "criado_em": "2026-05-07T22:47:22.604Z"
+      },
+      {
+        "id_inventario": 3,
+        "tipo_item": "SOFTWARE",
+        "id_empresa": 2,
+        "id_fabricante": 5,
+        "nome_modelo": "Office 365 Business",
+        "id_tipo_hardware": null,
+        "numero_serie": null,
+        "patrimonio_tag": null,
+        "data_aquisicao": null,
+        "valor_aquisicao": null,
+        "versao": "2023",
+        "chave_licenca": "XXXX-YYYY-ZZZZ",
+        "data_expiracao": "2027-01-01T03:00:00.000Z",
+        "status": "ATIVO",
+        "criado_em": "2026-05-04T23:38:33.667Z"
+      }
+    ],
+    "chamado": [
+      {
+        "id_chamado": 1,
+        "id_solicitante": 1,
+        "id_categoria": 1,
+        "id_prioridade": 3,
+        "id_status": 5,
+        "id_tecnico": 1,
+        "titulo": "Preciso de Ajuda",
+        "descricao": "DASDA",
+        "solucao": "Feito",
+        "data_abertura": "2026-05-06T00:23:57.479Z",
+        "data_prazo_sla": "2026-05-06T04:23:57.479Z",
+        "data_primeira_resposta": null,
+        "data_resolucao": "2026-05-06T00:42:33.011Z",
+        "data_fechamento": "2026-05-06T00:42:36.902Z",
+        "criado_por": 1,
+        "atualizado_em": "2026-05-06T00:42:36.902Z",
+        "id_inventario_rel": 1
+      },
+      {
+        "id_chamado": 2,
+        "id_solicitante": 1,
+        "id_categoria": 3,
+        "id_prioridade": 2,
+        "id_status": 5,
+        "id_tecnico": 1,
+        "titulo": "Preciso Arrumar Meu PC",
+        "descricao": "Meu PC parou de funcionar",
+        "solucao": "resolvido",
+        "data_abertura": "2026-05-06T03:19:21.096Z",
+        "data_prazo_sla": "2026-05-07T03:19:21.096Z",
+        "data_primeira_resposta": null,
+        "data_resolucao": "2026-05-06T03:21:15.542Z",
+        "data_fechamento": "2026-05-06T03:21:18.197Z",
+        "criado_por": 1,
+        "atualizado_em": "2026-05-06T03:21:18.197Z",
+        "id_inventario_rel": 1
+      },
+      {
+        "id_chamado": 3,
+        "id_solicitante": 1,
+        "id_categoria": 1,
+        "id_prioridade": 2,
+        "id_status": 2,
+        "id_tecnico": 1,
+        "titulo": "Minha tela quebrou",
+        "descricao": "Tela quebrou",
+        "solucao": null,
+        "data_abertura": "2026-05-07T22:52:48.909Z",
+        "data_prazo_sla": "2026-05-08T06:52:48.909Z",
+        "data_primeira_resposta": null,
+        "data_resolucao": null,
+        "data_fechamento": null,
+        "criado_por": 1,
+        "atualizado_em": "2026-05-07T22:57:21.652Z",
+        "id_inventario_rel": 2
+      },
+      {
+        "id_chamado": 4,
+        "id_solicitante": 3,
+        "id_categoria": 1,
+        "id_prioridade": 3,
+        "id_status": 4,
+        "id_tecnico": 2,
+        "titulo": "Fodase",
+        "descricao": "fodase",
+        "solucao": "deu certo",
+        "data_abertura": "2026-05-07T22:58:30.672Z",
+        "data_prazo_sla": "2026-05-08T02:58:30.672Z",
+        "data_primeira_resposta": null,
+        "data_resolucao": "2026-05-12T23:24:13.577Z",
+        "data_fechamento": null,
+        "criado_por": 3,
+        "atualizado_em": "2026-05-12T23:24:13.577Z",
+        "id_inventario_rel": null
+      },
+      {
+        "id_chamado": 5,
+        "id_solicitante": 1,
+        "id_categoria": 1,
+        "id_prioridade": 1,
+        "id_status": 2,
+        "id_tecnico": 1,
+        "titulo": "Preciso de Ajuda",
+        "descricao": "teste",
+        "solucao": null,
+        "data_abertura": "2026-05-12T23:24:43.224Z",
+        "data_prazo_sla": "2026-05-13T11:24:43.224Z",
+        "data_primeira_resposta": null,
+        "data_resolucao": null,
+        "data_fechamento": null,
+        "criado_por": 1,
+        "atualizado_em": "2026-05-13T00:32:06.004Z",
+        "id_inventario_rel": 3
+      },
+      {
+        "id_chamado": 6,
+        "id_solicitante": 1,
+        "id_categoria": 1,
+        "id_prioridade": 1,
+        "id_status": 4,
+        "id_tecnico": null,
+        "titulo": "teste",
+        "descricao": "teste",
+        "solucao": "FEITO",
+        "data_abertura": "2026-05-13T00:43:11.952Z",
+        "data_prazo_sla": "2026-05-13T12:43:11.952Z",
+        "data_primeira_resposta": null,
+        "data_resolucao": "2026-05-13T00:45:33.846Z",
+        "data_fechamento": null,
+        "criado_por": 1,
+        "atualizado_em": "2026-05-13T00:45:33.846Z",
+        "id_inventario_rel": 3
+      },
+      {
+        "id_chamado": 7,
+        "id_solicitante": 3,
+        "id_categoria": 1,
+        "id_prioridade": 2,
+        "id_status": 5,
+        "id_tecnico": 1,
+        "titulo": "Teste 2",
+        "descricao": "teste2",
+        "solucao": "FEITO",
+        "data_abertura": "2026-05-13T00:43:49.646Z",
+        "data_prazo_sla": "2026-05-14T00:44:00.000Z",
+        "data_primeira_resposta": null,
+        "data_resolucao": "2026-05-13T00:46:20.784Z",
+        "data_fechamento": "2026-05-13T00:46:30.479Z",
+        "criado_por": 3,
+        "atualizado_em": "2026-05-13T00:46:30.479Z",
+        "id_inventario_rel": 3
+      }
+    ],
+    "sistema_log": [
+      {
+        "id_log": 1,
+        "nivel": "INFO",
+        "modulo": "SYSTEM",
+        "mensagem": "Sistema de logs e gerenciamento de banco de dados inicializado com sucesso.",
+        "detalhes": {
+          "versao": "1.0.0"
+        },
+        "criado_em": "2026-05-13T00:58:11.935Z"
+      },
+      {
+        "id_log": 2,
+        "nivel": "INFO",
+        "modulo": "BACKUP",
+        "mensagem": "Iniciando backup agendado",
+        "detalhes": {
+          "arquivo": "sgdb_backup_2026-05-13T01-06-34-682Z.sql"
+        },
+        "criado_em": "2026-05-13T01:06:34.751Z"
+      },
+      {
+        "id_log": 3,
+        "nivel": "ERROR",
+        "modulo": "BACKUP",
+        "mensagem": "Falha ao executar backup",
+        "detalhes": {
+          "erro": "Command failed: pg_dump \"postgres://sgdb_app:troque_esta_senha_em_producao@127.0.0.1:5432/sgdb\" -F c -f \"C:\\Users\\bueno\\coding\\sgdb-project\\backups\\sgdb_backup_2026-05-13T01-06-34-682Z.sql\"\n'pg_dump' n�o � reconhecido como um comando interno\r\nou externo, um programa oper�vel ou um arquivo em lotes.\r\n",
+          "stderr": "'pg_dump' n�o � reconhecido como um comando interno\r\nou externo, um programa oper�vel ou um arquivo em lotes.\r\n",
+          "duration_ms": 75
+        },
+        "criado_em": "2026-05-13T01:06:34.770Z"
+      },
+      {
+        "id_log": 4,
+        "nivel": "INFO",
+        "modulo": "BACKUP",
+        "mensagem": "Iniciando backup manual",
+        "detalhes": {
+          "arquivo": "sgdb_backup_2026-05-13T01-07-24-791Z.sql"
+        },
+        "criado_em": "2026-05-13T01:07:25.361Z"
+      },
+      {
+        "id_log": 5,
+        "nivel": "ERROR",
+        "modulo": "BACKUP",
+        "mensagem": "Falha ao executar backup",
+        "detalhes": {
+          "erro": "Command failed: pg_dump \"postgres://sgdb_app:troque_esta_senha_em_producao@127.0.0.1:5432/sgdb\" -F c -f \"C:\\Users\\bueno\\coding\\sgdb-project\\backups\\sgdb_backup_2026-05-13T01-07-24-791Z.sql\"\n'pg_dump' n�o � reconhecido como um comando interno\r\nou externo, um programa oper�vel ou um arquivo em lotes.\r\n",
+          "stderr": "'pg_dump' n�o � reconhecido como um comando interno\r\nou externo, um programa oper�vel ou um arquivo em lotes.\r\n",
+          "duration_ms": 586
+        },
+        "criado_em": "2026-05-13T01:07:25.388Z"
+      },
+      {
+        "id_log": 6,
+        "nivel": "INFO",
+        "modulo": "BACKUP",
+        "mensagem": "Iniciando backup agendado (modo JSON leve)",
+        "detalhes": {
+          "arquivo": "sgdb_backup_2026-05-13T01-10-43-494Z.json"
+        },
+        "criado_em": "2026-05-13T01:10:43.546Z"
+      }
+    ]
+  }
+}

@@ -29,10 +29,10 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        'script-src': ["'self'"],
+        'script-src': ["'self'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
         'connect-src': ["'self'"],
-        'style-src': ["'self'", 'https://fonts.googleapis.com'],
-        'font-src': ["'self'", 'https://fonts.gstatic.com'],
+        'style-src': ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
+        'font-src': ["'self'", "https://fonts.gstatic.com"],
       },
     },
   })
@@ -67,11 +67,14 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
  * Rotas da Aplicação (API Restful)
  * Organizadas por domínio da aplicação (Autenticação, Chamados, Inventário, etc.)
  */
+const dbAdminRoutes = require('./routes/db_admin');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/chamados', chamadosRoutes);
 app.use('/api/empresas', empresasRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/tecnicos', tecnicosRoutes);
+app.use('/api/db', dbAdminRoutes);
 app.use('/api', catalogoRoutes);
 app.use('/api', inventoryRoutes);
 

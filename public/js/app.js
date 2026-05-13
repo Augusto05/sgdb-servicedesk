@@ -188,6 +188,7 @@
     }
     if (hasPerfil('ADMIN')) {
       items.push({ id: 'sla_pedidos', label: 'Solicitações SLA', icon: 'notification_important' });
+      items.push({ id: 'db_admin', label: 'Painel BD', icon: 'database' });
     }
     nav.innerHTML = items
       .map(
@@ -241,6 +242,11 @@
     } else if (page === 'sla_pedidos') {
       title.textContent = 'Solicitações de Mudança de SLA';
       await loadSlaRequests();
+    } else if (page === 'db_admin') {
+      title.textContent = 'Painel de Banco de Dados';
+      actions.innerHTML = '<button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-db">Atualizar</button>';
+      $('#btn-refresh-db')?.addEventListener('click', () => renderDbAdmin());
+      await renderDbAdmin();
     }
   }
 
@@ -1057,7 +1063,309 @@
   } else {
     showScreen('login');
   }
-  function escapeHtml(s) {
+  
+  async function renderDbAdmin() {
+    const content = $('#page-content');
+    content.innerHTML = '<p class="muted">Carregando métricas do BD…</p>';
+    try {
+      const [metrics, logs, backups] = await Promise.all([
+        api('/db/metrics'),
+        api('/db/logs'),
+        api('/db/backups')
+      ]);
+
+      const logLevelBadge = (level) => {
+        const colors = { INFO: 'blue', WARN: 'orange', ERROR: 'red', CRITICAL: 'darkred' };
+        return `<span class="badge" style="background-color: ${colors[level] || '#555'}">${level}</span>`;
+      };
+
+      // Prepare chart data
+      const maxConn = 100; 
+      const activeConn = parseInt(metrics.conexoes_ativas) || 0;
+      
+      content.innerHTML = `
+        <style>
+          .db-dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            color: #e2e8f0;
+          }
+          .db-row {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+          }
+          .db-kpi-card {
+            flex: 1;
+            min-width: 200px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          }
+          .db-kpi-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+          }
+          .db-kpi-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #f8fafc;
+          }
+          .db-panel {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+          }
+          .db-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 1rem 0;
+            color: #f8fafc;
+            font-size: 1.1rem;
+          }
+          .db-col-main { flex: 3; min-width: 60%; display: flex; flex-direction: column; gap: 1.5rem; }
+          .db-col-side { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 1.5rem; }
+          .db-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; font-family: monospace; }
+          .db-table th { padding: 0.75rem; border-bottom: 1px solid #334155; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+          .db-table td { padding: 0.75rem; border-bottom: 1px solid #334155; color: #cbd5e1; }
+          .db-table tr:hover { background: rgba(255,255,255,0.02); }
+        </style>
+
+        <div class="db-dashboard">
+          <!-- KPIs Row -->
+          <div class="db-row">
+            <div class="db-kpi-card" style="border-top: 4px solid #10b981;">
+              <div class="db-kpi-title">Status</div>
+              <div class="db-kpi-value" style="color: #10b981;">${escapeHtml(metrics.status)}</div>
+            </div>
+            <div class="db-kpi-card" style="border-top: 4px solid #3b82f6;">
+              <div class="db-kpi-title">Cache Hit Ratio</div>
+              <div class="db-kpi-value">${escapeHtml(metrics.cache_hit_ratio)}%</div>
+            </div>
+            <div class="db-kpi-card" style="border-top: 4px solid #8b5cf6;">
+              <div class="db-kpi-title">Tamanho do BD</div>
+              <div class="db-kpi-value">${escapeHtml(metrics.tamanho)}</div>
+            </div>
+            <div class="db-kpi-card" style="border-top: 4px solid #f59e0b;">
+              <div class="db-kpi-title">Conexões Ativas</div>
+              <div class="db-kpi-value">${metrics.conexoes_ativas}</div>
+            </div>
+          </div>
+
+          <!-- Main Layout -->
+          <div class="db-row">
+            <!-- Coluna Principal -->
+            <div class="db-col-main">
+              <div class="db-row" style="gap:1.5rem;">
+                <div class="db-panel" style="flex: 1; align-items: center;">
+                  <h4 class="db-panel-title" style="align-self: flex-start;"><span class="material-symbols-outlined">data_usage</span> Conexões (Uso)</h4>
+                  <div style="width: 200px; height: 200px; position: relative;">
+                    <canvas id="chart-connections"></canvas>
+                  </div>
+                </div>
+                
+                <div class="db-panel" style="flex: 2;">
+                  <h4 class="db-panel-title"><span class="material-symbols-outlined">warning</span> Alertas de Desempenho (Dead Tuples)</h4>
+                  ${(metrics.dead_tuples || []).length > 0 ? `
+                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+                      ${metrics.dead_tuples.map(dt => `
+                        <div>
+                          <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem; font-size:0.85rem;">
+                            <span style="color:#cbd5e1; font-family:monospace;">${escapeHtml(dt.relname)}</span>
+                            <span style="color: #ef4444; font-weight:bold;">${dt.n_dead_tup} tuplas mortas</span>
+                          </div>
+                          <div style="width: 100%; background: #0f172a; height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid #334155;">
+                            <div style="width: ${Math.min((dt.n_dead_tup / 100) * 100, 100)}%; background: #ef4444; height: 100%; box-shadow: 0 0 10px #ef4444;"></div>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  ` : '<p style="color:#94a3b8; font-size:0.9rem;">Nenhuma tabela com alta fragmentação.</p>'}
+                </div>
+              </div>
+
+              <!-- Top Queries -->
+              <div class="db-panel">
+                <h4 class="db-panel-title"><span class="material-symbols-outlined">speed</span> Últimas Queries (pg_stat_activity)</h4>
+                <div style="overflow-x: auto;">
+                  <table class="db-table">
+                    <thead><tr><th>PID</th><th>Status</th><th>Duração</th><th>Query Executada</th></tr></thead>
+                    <tbody>
+                      ${(metrics.ultimas_queries || []).map(q => `
+                        <tr>
+                          <td>${q.pid}</td>
+                          <td><span class="badge" style="background: ${q.state === 'active' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}; color: ${q.state === 'active' ? '#34d399' : '#fbbf24'};">${escapeHtml(q.state)}</span></td>
+                          <td><strong style="color:#f8fafc;">${parseFloat(q.duration).toFixed(3)}s</strong></td>
+                          <td style="max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(q.query)}">${escapeHtml(q.query)}</td>
+                        </tr>
+                      `).join('')}
+                      ${!(metrics.ultimas_queries?.length) ? '<tr><td colspan="4" style="text-align:center; color:#64748b;">Nenhuma query ativa capturada no momento.</td></tr>' : ''}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Logs -->
+              <div class="db-panel">
+                <h4 class="db-panel-title"><span class="material-symbols-outlined">receipt_long</span> System Logs (Auditoria)</h4>
+                <div style="max-height: 250px; overflow-y: auto;">
+                  <table class="db-table">
+                    <thead style="position: sticky; top: 0; background: #1e293b; z-index: 1;">
+                      <tr><th>Nível</th><th>Módulo</th><th>Mensagem</th><th>Data/Hora</th></tr>
+                    </thead>
+                    <tbody>
+                      ${logs.map(l => `
+                        <tr>
+                          <td>${logLevelBadge(l.nivel)}</td>
+                          <td style="font-weight: 600; color:#cbd5e1;">${escapeHtml(l.modulo)}</td>
+                          <td style="color:#94a3b8;">${escapeHtml(l.mensagem)}</td>
+                          <td style="white-space: nowrap;">${formatDate(l.criado_em)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Coluna Lateral -->
+            <div class="db-col-side">
+              <div class="db-panel" style="background: linear-gradient(180deg, #1e293b, #0f172a); border-color: #3b82f6;">
+                <h4 class="db-panel-title" style="color: #60a5fa;"><span class="material-symbols-outlined">cloud_download</span> Backup Management</h4>
+                <p style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5; margin-bottom: 1.5rem;">
+                  Escolha entre extração estruturada (JSON) para integrações rápidas, ou SQL nativo contendo toda a DDL/DML.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <button class="btn btn-primary" id="btn-run-backup-json" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 0.95rem; border-radius: 8px; background: #3b82f6; color: #fff;">
+                    <span class="material-symbols-outlined" style="font-size: 1.2rem;">data_object</span> Gerar JSON Snapshot
+                  </button>
+                  <button class="btn btn-primary" id="btn-run-backup-sql" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 0.95rem; border-radius: 8px; background: #10b981; color: #fff;">
+                    <span class="material-symbols-outlined" style="font-size: 1.2rem;">terminal</span> Gerar Raw SQL Dump
+                  </button>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                  <h5 style="font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 0.75rem;">Snapshots Disponíveis</h5>
+                  ${backups.length > 0 ? `
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 350px; overflow-y: auto;">
+                      ${backups.map(b => {
+                        const isSql = b.name.endsWith('.sql');
+                        const iconColor = isSql ? '#10b981' : '#3b82f6';
+                        const icon = isSql ? 'terminal' : 'data_object';
+                        return `
+                          <div style="background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 8px; padding: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; overflow: hidden;">
+                              <span class="material-symbols-outlined" style="color: ${iconColor}; font-size: 1.5rem;">${icon}</span>
+                              <div style="overflow: hidden;">
+                                <div style="font-family: monospace; font-size: 0.75rem; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(b.name)}">${escapeHtml(b.name)}</div>
+                                <div style="font-size: 0.7rem; color: #64748b; margin-top: 0.25rem;">${b.sizeMB} MB • ${formatDate(b.createdAt)}</div>
+                              </div>
+                            </div>
+                            <a href="/api/db/backup/download/${b.name}" target="_blank" class="btn btn-icon" title="Baixar" style="color: ${iconColor}; margin-left: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                              <span class="material-symbols-outlined">download</span>
+                            </a>
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  ` : '<div style="font-size:0.85rem; color:#64748b;">Nenhum backup encontrado.</div>'}
+                </div>
+              </div>
+
+              <div class="db-panel">
+                 <h4 class="db-panel-title"><span class="material-symbols-outlined">memory</span> Instância</h4>
+                 <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9rem; line-height: 2; color: #cbd5e1;">
+                   <li style="display:flex; justify-content:space-between;"><span>Engine:</span> <strong>PostgreSQL 16</strong></li>
+                   <li style="display:flex; justify-content:space-between;"><span>Runtime:</span> <strong>Node.js 18.x</strong></li>
+                   <li style="display:flex; justify-content:space-between;"><span>Registros:</span> <strong>${metrics.total_chamados}</strong></li>
+                   <li style="display:flex; justify-content:space-between;"><span>Porta Ativa:</span> <strong>5432</strong></li>
+                 </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Renderizar o Chart.js com segurança
+      setTimeout(() => {
+        if (window.Chart) {
+          const canvas = document.getElementById('chart-connections');
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                labels: ['Ativas', 'Livres'],
+                datasets: [{
+                  data: [activeConn, Math.max(maxConn - activeConn, 0)],
+                  backgroundColor: ['#f59e0b', '#334155'],
+                  borderWidth: 0
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: { legend: { display: false }, tooltip: { enabled: true } }
+              }
+            });
+          }
+        } else {
+          console.error("Chart.js não está disponível no window.");
+        }
+      }, 100);
+
+      $('#btn-run-backup-json')?.addEventListener('click', async () => {
+        if (!confirm('Deseja iniciar um backup estruturado em formato JSON?')) return;
+        const btn = $('#btn-run-backup-json');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined">sync</span> Gerando...';
+        try {
+          await api('/db/backup/trigger', { method: 'POST' });
+          toast('Backup JSON concluído com sucesso!');
+          renderDbAdmin();
+        } catch (e) {
+          toast(e.message, 'err');
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-symbols-outlined">data_object</span> Gerar JSON Snapshot';
+        }
+      });
+
+      $('#btn-run-backup-sql')?.addEventListener('click', async () => {
+        if (!confirm('Deseja iniciar um Raw SQL Dump? (Estrutura e Dados)')) return;
+        const btn = $('#btn-run-backup-sql');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined">sync</span> Gerando...';
+        try {
+          await api('/db/backup/sql/trigger', { method: 'POST' });
+          toast('Raw SQL Dump concluído com sucesso!');
+          renderDbAdmin();
+        } catch (e) {
+          toast(e.message, 'err');
+          btn.disabled = false;
+          btn.innerHTML = '<span class="material-symbols-outlined">terminal</span> Gerar Raw SQL Dump';
+        }
+      });
+
+    } catch (e) {
+      content.innerHTML = `<p class="msg-error">${escapeHtml(e.message)}</p>`;
+    }
+  }
+
+function escapeHtml(s) {
     if (s == null) return '';
     return String(s)
       .replace(/&/g, '&amp;')
