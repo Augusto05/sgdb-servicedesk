@@ -12,6 +12,8 @@ const inventoryRoutes = require('./routes/inventory');
 const empresasRoutes = require('./routes/empresas');
 const usuariosRoutes = require('./routes/usuarios');
 const tecnicosRoutes = require('./routes/tecnicos');
+const { authRequired } = require('./middleware/auth');
+const { auditMiddleware } = require('./middleware/audit');
 
 if (!process.env.DATABASE_URL || !process.env.JWT_SECRET) {
   console.error('Defina DATABASE_URL e JWT_SECRET no arquivo .env');
@@ -70,6 +72,10 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 const dbAdminRoutes = require('./routes/db_admin');
 
 app.use('/api/auth', authRoutes);
+
+// Todas as rotas abaixo requerem autenticação e auditoria automática
+app.use('/api', authRequired, auditMiddleware);
+
 app.use('/api/chamados', chamadosRoutes);
 app.use('/api/empresas', empresasRoutes);
 app.use('/api/usuarios', usuariosRoutes);

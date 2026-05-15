@@ -12,14 +12,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const { rows } = await pool.query(
-      `SELECT u.id_usuario, u.nome_usuario, u.email, u.id_empresa, u.ativo,
-              COALESCE(
-                (SELECT array_agg(p.codigo ORDER BY p.codigo)
-                 FROM usuario_perfil up
-                 JOIN perfil p ON p.id_perfil = up.id_perfil
-                 WHERE up.id_usuario = u.id_usuario),
-                ARRAY[]::varchar[]
-              ) AS perfis
+      `SELECT u.id_usuario, u.nome_usuario, u.email, u.id_empresa, u.ativo, u.perfis
        FROM usuario u
        WHERE lower(trim(u.email)) = lower(trim($1))
          AND u.senha_hash = crypt($2::text, u.senha_hash)

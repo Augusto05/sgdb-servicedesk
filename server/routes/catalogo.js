@@ -3,7 +3,6 @@ const { pool } = require('../db');
 const { authRequired } = require('../middleware/auth');
 
 const router = express.Router();
-router.use(authRequired);
 
 router.get('/categorias', async (_req, res) => {
   const { rows } = await pool.query(

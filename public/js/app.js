@@ -1276,7 +1276,7 @@
                                 <div style="font-size: 0.7rem; color: #64748b; margin-top: 0.25rem;">${b.sizeMB} MB • ${formatDate(b.createdAt)}</div>
                               </div>
                             </div>
-                            <a href="/api/db/backup/download/${b.name}" target="_blank" class="btn btn-icon" title="Baixar" style="color: ${iconColor}; margin-left: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                            <a href="/api/db/backup/download/${b.name}?token=${state.token}" target="_blank" class="btn btn-icon" title="Baixar" style="color: ${iconColor}; margin-left: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
                               <span class="material-symbols-outlined">download</span>
                             </a>
                           </div>

@@ -1,9 +1,9 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authRequired, requirePerfil } = require('../middleware/auth');
+const { sysLog } = require('../services/logger');
 
 const router = express.Router();
-router.use(authRequired);
 
 router.get('/:id(\\d+)', async (req, res) => {
   const id = parseInt(req.params.id, 10);
@@ -20,8 +20,8 @@ router.get('/:id(\\d+)', async (req, res) => {
               sol.nome_usuario AS solicitante_nome, sol.email AS solicitante_email, sol.id_empresa as sol_empresa,
               tu.nome_usuario AS tecnico_nome,
               inv.nome_modelo AS inventario_nome, inv.tipo_item AS inventario_tipo,
-              ud_sol.foto_url as solicitante_foto, ud_sol.data_nascimento as solicitante_nasc,
-              ud_tec.foto_url as tecnico_foto, ud_tec.data_nascimento as tecnico_nasc,
+              sol.foto_url as solicitante_foto, sol.data_nascimento as solicitante_nasc,
+              tu.foto_url as tecnico_foto, tu.data_nascimento as tecnico_nasc,
               e_sol.nome_fantasia as solicitante_empresa_nome, e_tec.nome_fantasia as tecnico_empresa_nome
        FROM chamado c
        JOIN status_chamado sc ON sc.id_status = c.id_status
@@ -33,8 +33,6 @@ router.get('/:id(\\d+)', async (req, res) => {
        LEFT JOIN usuario tu ON tu.id_usuario = t.id_usuario
        LEFT JOIN empresa e_tec ON e_tec.id_empresa = tu.id_empresa
        LEFT JOIN inventario inv ON inv.id_inventario = c.id_inventario_rel
-       LEFT JOIN usuario_detalhes ud_sol ON ud_sol.id_usuario = sol.id_usuario
-       LEFT JOIN usuario_detalhes ud_tec ON ud_tec.id_usuario = tu.id_usuario
        WHERE c.id_chamado = $1`,
       [id]
     );
@@ -123,6 +121,7 @@ router.post('/', async (req, res) => {
     );
 
     await client.query('COMMIT');
+
     return res.status(201).json({ id_chamado });
   } catch (e) {
     await client.query('ROLLBACK');
@@ -183,6 +182,7 @@ router.post('/:id/resolver', requirePerfil('ADMIN', 'TECNICO'), async (req, res)
   try {
     const st = await pool.query("SELECT id_status FROM status_chamado WHERE codigo = 'RESOLVIDO' LIMIT 1");
     await pool.query(`SELECT sp_registrar_resolucao($1::int, $2::text, $3::int, $4::int)`, [idChamado, solucao, st.rows[0].id_status, req.user.sub]);
+
     return res.json({ ok: true });
   } catch (e) {
     return res.status(400).json({ erro: e.message });
@@ -194,6 +194,7 @@ router.post('/:id/fechar', requirePerfil('ADMIN', 'TECNICO', 'EMPRESA_ADMIN', 'S
   try {
     const st = await pool.query("SELECT id_status FROM status_chamado WHERE codigo = 'FECHADO' LIMIT 1");
     await pool.query(`SELECT sp_fechar_chamado($1::int, $2::int, $3::int)`, [idChamado, st.rows[0].id_status, req.user.sub]);
+
     return res.json({ ok: true });
   } catch (e) {
     return res.status(400).json({ erro: e.message });

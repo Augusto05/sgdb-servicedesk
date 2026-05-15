@@ -51,8 +51,8 @@ router.get('/metrics', async (req, res) => {
       const queriesRes = await pool.query(`
         SELECT pid, state, query, extract(epoch from (now() - query_start)) as duration 
         FROM pg_stat_activity 
-        WHERE state != 'idle' AND query NOT ILIKE '%pg_stat_activity%' AND datname='sgdb'
-        ORDER BY duration DESC LIMIT 5
+        WHERE state IS NOT NULL AND query NOT ILIKE '%pg_stat_activity%' AND datname='sgdb'
+        ORDER BY query_start DESC LIMIT 5
       `);
       metrics.ultimas_queries = queriesRes.rows;
     } catch(e) { metrics.ultimas_queries = []; }

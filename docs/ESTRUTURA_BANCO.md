@@ -39,31 +39,12 @@ CREATE TABLE usuario (
     id_empresa INTEGER NOT NULL REFERENCES empresa (id_empresa),
     email VARCHAR(180) NOT NULL UNIQUE,
     senha_hash TEXT NOT NULL,
+    perfis VARCHAR(40)[] DEFAULT ARRAY[]::VARCHAR[], -- Array de códigos de perfil (ex: {'ADMIN'})
+    foto_url TEXT,
+    data_nascimento DATE,
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
     criado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT ck_email_format CHECK (email ~* '^[^@]+@[^@]+\.[^@]+$')
-);
-```
-
-### Tabela: `usuario_perfil`
-Relacionamento N:N entre usuários e perfis.
-```sql
-CREATE TABLE usuario_perfil (
-    id_usuario INTEGER NOT NULL REFERENCES usuario (id_usuario) ON DELETE CASCADE,
-    id_perfil INTEGER NOT NULL REFERENCES perfil (id_perfil) ON DELETE RESTRICT,
-    PRIMARY KEY (id_usuario, id_perfil)
-);
-```
-
-### Tabela: `usuario_detalhes`
-Dados complementares e metadados de usuários.
-```sql
-CREATE TABLE usuario_detalhes (
-    id_detalhe SERIAL PRIMARY KEY,
-    id_usuario INTEGER NOT NULL UNIQUE REFERENCES usuario (id_usuario) ON DELETE CASCADE,
-    foto_url TEXT,
-    data_nascimento DATE,
-    criado_em TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
 
@@ -105,14 +86,6 @@ CREATE TABLE fabricante (
 );
 ```
 
-### Tabela: `tipo_hardware`
-```sql
-CREATE TABLE tipo_hardware (
-    id_tipo_hardware SERIAL PRIMARY KEY,
-    nome VARCHAR(80) NOT NULL UNIQUE
-);
-```
-
 ### Tabela: `inventario`
 Tabela unificada que gerencia tanto Hardware quanto Software.
 ```sql
@@ -122,7 +95,7 @@ CREATE TABLE inventario (
     id_empresa INTEGER NOT NULL REFERENCES empresa (id_empresa) ON DELETE CASCADE,
     id_fabricante INTEGER NOT NULL REFERENCES fabricante (id_fabricante),
     nome_modelo VARCHAR(120) NOT NULL,
-    id_tipo_hardware INTEGER REFERENCES tipo_hardware (id_tipo_hardware),
+    tipo_hardware_nome VARCHAR(80), -- Nome direto do tipo (ex: Notebook, Desktop)
     numero_serie VARCHAR(120) UNIQUE,
     patrimonio_tag VARCHAR(80) UNIQUE,
     data_aquisicao DATE,

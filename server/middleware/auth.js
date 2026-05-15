@@ -2,11 +2,20 @@ const jwt = require('jsonwebtoken');
 
 function authRequired(req, res, next) {
   if (req.user) return next();
+  
+  let token;
   const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+  
+  if (header && header.startsWith('Bearer ')) {
+    token = header.slice(7);
+  } else if (req.query.token) {
+    token = req.query.token;
+  }
+
+  if (!token) {
     return res.status(401).json({ erro: 'Token ausente.' });
   }
-  const token = header.slice(7);
+
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.user = payload;

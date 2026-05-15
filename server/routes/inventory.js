@@ -1,9 +1,9 @@
 const express = require('express');
 const { pool } = require('../db');
 const { authRequired, requirePerfil } = require('../middleware/auth');
+const { sysLog } = require('../services/logger');
 
 const router = express.Router();
-router.use(authRequired);
 
 // Helper function to check inventory access
 async function checkInventoryAccess(req, res, id_empresa_item) {
@@ -46,11 +46,10 @@ router.get('/inventario', async (req, res) => {
   try {
     let sql = `
       SELECT i.id_inventario, i.tipo_item, i.nome_modelo, i.status, i.numero_serie, i.patrimonio_tag, i.versao, i.chave_licenca, i.data_expiracao,
-             fab.nome AS fabricante, e.nome_fantasia as empresa, th.nome AS tipo_hardware
+             fab.nome AS fabricante, e.nome_fantasia as empresa, i.tipo_hardware_nome
       FROM inventario i
       JOIN fabricante fab ON fab.id_fabricante = i.id_fabricante
       JOIN empresa e ON e.id_empresa = i.id_empresa
-      LEFT JOIN tipo_hardware th ON th.id_tipo_hardware = i.id_tipo_hardware
       WHERE i.status != 'BAIXADO' AND i.status != 'CANCELADO'
     `;
     const params = [];
@@ -82,16 +81,17 @@ router.get('/inventario', async (req, res) => {
 
 // POST /inventario
 router.post('/inventario', requirePerfil('ADMIN', 'TECNICO', 'EMPRESA_ADMIN'), async (req, res) => {
-  const { tipo_item, id_empresa, id_fabricante, nome_modelo, id_tipo_hardware, numero_serie, patrimonio_tag, data_aquisicao, valor_aquisicao, versao, chave_licenca, data_expiracao, status } = req.body;
+  const { tipo_item, id_empresa, id_fabricante, nome_modelo, tipo_hardware_nome, numero_serie, patrimonio_tag, data_aquisicao, valor_aquisicao, versao, chave_licenca, data_expiracao, status } = req.body;
   
   if (!await checkInventoryAccess(req, res, id_empresa)) return;
 
   try {
     const { rows } = await pool.query(
-      `INSERT INTO inventario (tipo_item, id_empresa, id_fabricante, nome_modelo, id_tipo_hardware, numero_serie, patrimonio_tag, data_aquisicao, valor_aquisicao, versao, chave_licenca, data_expiracao, status)
+      `INSERT INTO inventario (tipo_item, id_empresa, id_fabricante, nome_modelo, tipo_hardware_nome, numero_serie, patrimonio_tag, data_aquisicao, valor_aquisicao, versao, chave_licenca, data_expiracao, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id_inventario`,
-      [tipo_item, id_empresa, id_fabricante, nome_modelo, id_tipo_hardware || null, numero_serie || null, patrimonio_tag || null, data_aquisicao || null, valor_aquisicao || null, versao || null, chave_licenca || null, data_expiracao || null, status || 'ATIVO']
+      [tipo_item, id_empresa, id_fabricante, nome_modelo, tipo_hardware_nome || null, numero_serie || null, patrimonio_tag || null, data_aquisicao || null, valor_aquisicao || null, versao || null, chave_licenca || null, data_expiracao || null, status || 'ATIVO']
     );
+
     res.status(201).json(rows[0]);
   } catch (e) {
     console.error(e);
@@ -102,7 +102,7 @@ router.post('/inventario', requirePerfil('ADMIN', 'TECNICO', 'EMPRESA_ADMIN'), a
 // PUT /inventario/:id
 router.put('/inventario/:id', requirePerfil('ADMIN', 'EMPRESA_ADMIN'), async (req, res) => {
   const idInventario = parseInt(req.params.id, 10);
-  const { id_empresa, id_fabricante, nome_modelo, id_tipo_hardware, numero_serie, patrimonio_tag, data_aquisicao, valor_aquisicao, versao, chave_licenca, data_expiracao, status } = req.body;
+  const { id_empresa, id_fabricante, nome_modelo, tipo_hardware_nome, numero_serie, patrimonio_tag, data_aquisicao, valor_aquisicao, versao, chave_licenca, data_expiracao, status } = req.body;
 
   try {
     const item = await pool.query('SELECT id_empresa FROM inventario WHERE id_inventario = $1', [idInventario]);
@@ -121,7 +121,7 @@ router.put('/inventario/:id', requirePerfil('ADMIN', 'EMPRESA_ADMIN'), async (re
         id_empresa = COALESCE($1, id_empresa),
         id_fabricante = COALESCE($2, id_fabricante),
         nome_modelo = COALESCE($3, nome_modelo),
-        id_tipo_hardware = COALESCE($4, id_tipo_hardware),
+        tipo_hardware_nome = COALESCE($4, tipo_hardware_nome),
         numero_serie = COALESCE($5, numero_serie),
         patrimonio_tag = COALESCE($6, patrimonio_tag),
         data_aquisicao = COALESCE($7, data_aquisicao),
@@ -131,7 +131,7 @@ router.put('/inventario/:id', requirePerfil('ADMIN', 'EMPRESA_ADMIN'), async (re
         data_expiracao = COALESCE($11, data_expiracao),
         status = COALESCE($12, status)
        WHERE id_inventario = $13`,
-      [id_empresa, id_fabricante, nome_modelo, id_tipo_hardware, numero_serie, patrimonio_tag, data_aquisicao, valor_aquisicao, versao, chave_licenca, data_expiracao, status, idInventario]
+      [id_empresa, id_fabricante, nome_modelo, tipo_hardware_nome, numero_serie, patrimonio_tag, data_aquisicao, valor_aquisicao, versao, chave_licenca, data_expiracao, status, idInventario]
     );
     res.json({ ok: true });
   } catch (e) {
@@ -145,12 +145,13 @@ router.delete('/inventario/:id', requirePerfil('ADMIN', 'EMPRESA_ADMIN'), async 
   const idInventario = parseInt(req.params.id, 10);
 
   try {
-    const item = await pool.query('SELECT id_empresa FROM inventario WHERE id_inventario = $1', [idInventario]);
+    const item = await pool.query('SELECT id_empresa, nome_modelo FROM inventario WHERE id_inventario = $1', [idInventario]);
     if (item.rows.length === 0) return res.status(404).json({ erro: 'Item não encontrado.' });
     
     if (!await checkInventoryAccess(req, res, item.rows[0].id_empresa)) return;
 
     await pool.query('DELETE FROM inventario WHERE id_inventario = $1', [idInventario]);
+
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -159,11 +160,7 @@ router.delete('/inventario/:id', requirePerfil('ADMIN', 'EMPRESA_ADMIN'), async 
 });
 
 
-// Lookups (Tipo e Fabricante)
-router.get('/inventario/tipos', async (_req, res) => {
-  const { rows } = await pool.query('SELECT * FROM tipo_hardware ORDER BY nome');
-  res.json(rows);
-});
+// Lookups (Fabricante)
 router.get('/inventario/fabricantes', async (_req, res) => {
   const { rows } = await pool.query('SELECT * FROM fabricante ORDER BY nome');
   res.json(rows);

@@ -17,8 +17,8 @@ O pipeline de atendimento utiliza controle de concorrência e transações ACID 
 
 ## 3. Gestão de Ativos (Configuration Management Database - CMDB)
 A plataforma incorpora um micro-CMDB para rastreabilidade de infraestrutura e correlação de incidentes.
-* **Integridade Relacional**: O esquema `inventario` unifica ativos de hardware e licenças de software empregando *Domain Constraints*.
-* **Mapeamento de Dependências**: A atribuição de hardware a usuários ou departamentos é fortemente tipada através de Chaves Estrangeiras (`FK`), assegurando a *Integridade Referencial* e impedindo a existência de ativos órfãos no sistema.
+* **Integridade Relacional**: O esquema `inventario` unifica ativos de hardware e licenças de software, incluindo o tipo de hardware diretamente no registro para simplificação de consultas.
+* **Mapeamento de Dependências**: A atribuição de ativos a usuários ou departamentos é fortemente tipada através de Chaves Estrangeiras (`FK`), assegurando a *Integridade Referencial* e impedindo a existência de ativos órfãos no sistema.
 
 ## 4. Governança e Monitoramento de SGBD (Foco do Projeto)
 O grande diferencial técnico deste projeto é a implementação nativa de ferramentas de observabilidade, extração de dados e segurança, cobrindo os pilares fundamentais da disciplina de Banco de Dados.
@@ -39,13 +39,13 @@ Um dos principais artefatos da disciplina é a transparência operacional. Foi d
 * **Densidade de Conexões**: Contagem de *backends* (sessões) ativos na instância utilizando a view `pg_stat_activity`, medindo o esgotamento do pool de conexões.
 * **Eficiência de Memória (Cache Hit Ratio)**: Cálculo heurístico acessando a view `pg_stat_database` (`sum(blks_hit) * 100 / nullif(sum(blks_hit + blks_read), 0)`). Este indicador supervisiona a proporção de blocos lidos da memória RAM (Shared Buffers) em relação às leituras físicas em disco (I/O).
 * **Desfragmentação e Tuplas Mortas (Dead Tuples)**: Varredura da view `pg_stat_user_tables` para extrair o indicador `n_dead_tup`. O painel elenca o "Top 5" de tabelas mais fragmentadas (com alto volume de UPDATEs/DELETEs), servindo como alerta precoce para a necessidade de rotinas de `VACUUM` (Reclaim de espaço).
-* **Top Queries Ativas (Gargalos de Processamento)**: Monitoramento contínuo da view `pg_stat_activity` filtrando por `state != 'idle'`. A consulta captura os PIDs (*Process IDs*), o texto da instrução SQL executada (`query`) e o cálculo de duração exata (`now() - query_start`), listando as 5 consultas mais custosas/longas em execução, facilitando o *Troubleshooting* de bloqueios ou lentidão extrema.
+* **Visibilidade de Queries (Últimas Operações)**: Monitoramento da view `pg_stat_activity` que captura os PIDs, o texto da instrução SQL e a duração. O sistema exibe as operações mais recentes, permitindo auditar o que acabou de ser processado pelo motor do banco, mesmo em conexões que já entraram em estado de espera (*idle*).
 * **Volume Operacional**: Contagem absoluta de registros transacionais (total de logs no sistema e total de chamados operados).
 
-### 4.4. Telemetria e Logs de Sistema
-A tabela `sistema_log` funciona como o cérebro de auditoria passiva:
-* Consolida os *status codes* de execuções de backup (Sucesso, Falha, Metadados).
-* Categorização semântica de criticidade (INFO, WARN, ERROR, CRITICAL), permitindo alertas rápidos caso o motor de extração ou algum serviço de *background* entre em falha silenciosa.
+### 4.4. Telemetria e Auditoria Global Automática
+A plataforma implementa um sistema de **Auditoria Passiva e Onipresente**:
+* **Middleware de Interceptação**: Todas as operações mutantes (Criação, Atualização e Exclusão) são interceptadas por uma camada de middleware que registra automaticamente o autor, o módulo afetado, a URL da API e o corpo da requisição (quando aplicável) na tabela `sistema_log`.
+* **Rastreabilidade Total**: Garante que 100% das alterações realizadas via aplicação sejam documentadas de forma imutável, permitindo a reconstituição de eventos e responsabilização (Accountability) em cenários de suporte ou segurança.
 
 ---
 **Projeto de SGBD** - Uma prova de conceito que transcende o CRUD básico, entregando soluções reais de administração, resiliência de dados e monitoramento de performance em instâncias de banco de dados corporativas.

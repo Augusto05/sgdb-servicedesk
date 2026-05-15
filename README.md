@@ -29,12 +29,12 @@ O sistema foi desenhado para evitar gargalos entre a abertura e o atendimento:
 
 Atendendo a rigorosos requisitos de confiabilidade e disponibilidade, a aplicação conta com recursos de nível NOC (Network Operations Center) focados na disciplina de Sistemas Gerenciadores de Banco de Dados:
 
+- **Auditoria Global e Automática**: Middleware de interceptação que registra automaticamente toda e qualquer operação de criação, alteração ou exclusão (`POST`, `PUT`, `DELETE`) em todas as tabelas do sistema, garantindo rastreabilidade total de quem alterou o quê e quando.
 - **Dashboard Cockpit**: Um painel de controle escuro e avançado que monitora métricas do PostgreSQL em tempo real, incluindo:
   - Cache Hit Ratio (Eficiência de memória RAM vs Disco).
-  - Últimas Queries Executadas (Capturadas via `pg_stat_activity` com tempo de transação).
+  - Visibilidade de Queries (Histórico recente e comandos ativos).
   - Nível de Fragmentação (Alerta de *Dead Tuples* por tabela).
   - Gráfico de conexões ativas na instância.
-- **Auditoria Imutável (Logs)**: Tabela dedicada no banco (`sistema_log`) que intercepta falhas de sistema, erros de banco e eventos de segurança (com `JSONB` para detalhes).
 - **Sistema Duplo de Backups Lógicos**: 
   - **Snapshot JSON**: Extração leve e puramente estruturada focada nos dados, ideal para auditorias e integrações via API.
   - **Raw SQL Dump**: Exportação massiva consolidando toda a DDL (Estrutura, Triggers, Views) e DML (Dados reais através de comandos `INSERT`), criando um script SQL perfeito para restauração nativa em qualquer instância PostgreSQL, ignorando dependências de PATH do S.O.
