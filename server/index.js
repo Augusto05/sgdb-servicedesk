@@ -12,6 +12,8 @@ const inventoryRoutes = require('./routes/inventory');
 const empresasRoutes = require('./routes/empresas');
 const usuariosRoutes = require('./routes/usuarios');
 const tecnicosRoutes = require('./routes/tecnicos');
+const dashboardRoutes = require('./routes/dashboard');
+const knowledgeRoutes = require('./routes/knowledge');
 const { authRequired } = require('./middleware/auth');
 const { auditMiddleware } = require('./middleware/audit');
 
@@ -81,6 +83,8 @@ app.use('/api/empresas', empresasRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/tecnicos', tecnicosRoutes);
 app.use('/api/db', dbAdminRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api', catalogoRoutes);
 app.use('/api', inventoryRoutes);
 
@@ -88,5 +92,5 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => {
-  console.log(`SGDB API em http://localhost:${port}`);
+  console.log(`KeepIT API em http://localhost:${port}`);
 });

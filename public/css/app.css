@@ -112,6 +112,24 @@ code {
   justify-content: center;
   box-shadow: 0 0 20px var(--accent-glow);
 }
+
+.login-logo {
+  max-width: 240px;
+  height: auto;
+  max-height: 120px;
+  object-fit: contain;
+  background: transparent;
+  margin-bottom: 1rem;
+}
+
+.sidebar-logo {
+  max-width: 180px;
+  height: auto;
+  max-height: 40px;
+  object-fit: contain;
+  background: transparent;
+}
+
 .logo-mark.sm {
   width: 32px;
   height: 32px;
@@ -719,3 +737,203 @@ table.data tbody tr:hover {
   font-family: var(--font);
   color: #94a3b8;
 }
+
+/* Modern Dashboard Layout */
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 0.5rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+}
+
+.metric-card {
+  background: var(--bg-panel);
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.metric-header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.metric-header span { font-size: 1.1rem; }
+
+.metric-val {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.metric-card.accent .metric-val { color: var(--accent); }
+.metric-card.blue .metric-val { color: #60a5fa; }
+
+.metric-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.dashboard-main-row {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 1.5rem;
+}
+
+.dashboard-secondary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Modern Tables */
+.table-modern {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.5rem;
+}
+
+.table-modern th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.table-modern td {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.9rem;
+}
+
+.table-modern tr td:first-child { border-radius: 8px 0 0 8px; }
+.table-modern tr td:last-child { border-radius: 0 8px 8px 0; }
+
+.td-id { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
+.td-title { 
+  max-width: 250px; 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+}
+.td-date { color: var(--muted); font-size: 0.8rem; }
+
+/* Modern Lists */
+.list-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+.list-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.list-item-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.text-warn { color: #f59e0b; }
+
+.badge-manutencao {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Alert Banner */
+.alert-banner {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #fbbf24;
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0% { border-color: rgba(245, 158, 11, 0.3); }
+  50% { border-color: rgba(245, 158, 11, 0.6); }
+  100% { border-color: rgba(245, 158, 11, 0.3); }
+}
+
+.card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+/* Knowledge Base */
+.knowledge-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.article-card {
+  padding: 1.5rem;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.article-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+}
+
+.article-full {
+  padding: 1rem;
+}
+
+

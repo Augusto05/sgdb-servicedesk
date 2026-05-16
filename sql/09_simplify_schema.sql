@@ -34,10 +34,10 @@ FROM tipo_hardware th
 WHERE th.id_tipo_hardware = i.id_tipo_hardware;
 
 -- 6. Remover tabelas e colunas redundantes
-DROP TABLE usuario_detalhes;
-DROP TABLE usuario_perfil;
-DROP TABLE tipo_hardware;
-
-ALTER TABLE inventario DROP COLUMN id_tipo_hardware;
+ALTER TABLE inventario DROP COLUMN id_tipo_hardware CASCADE;
+DROP TABLE usuario_detalhes CASCADE;
+DROP TABLE usuario_perfil CASCADE;
+DROP TABLE tipo_hardware CASCADE;
+DROP TABLE perfil CASCADE;
 
 COMMIT;

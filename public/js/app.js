@@ -1,8 +1,8 @@
 (function () {
   'use strict';
 
-  const STORAGE_KEY = 'sgdb_token';
-  const STORAGE_USER = 'sgdb_user';
+  const STORAGE_KEY = 'keepit_token';
+  const STORAGE_USER = 'keepit_user';
 
   const state = {
     token: null,
@@ -174,11 +174,13 @@
 
   function renderNav() {
     const nav = $('#nav-main');
-    const items = [
-      { id: 'chamados', label: 'Chamados', icon: 'inbox' },
-      { id: 'novo', label: 'Novo chamado', icon: 'add_circle' },
-      { id: 'inventario', label: 'Inventário', icon: 'inventory_2' },
-    ];
+    const items = [];
+    if (hasPerfil('ADMIN')) items.push({ id: 'home', label: 'Home', icon: 'dashboard' });
+    items.push({ id: 'chamados', label: 'Chamados', icon: 'inbox' });
+    items.push({ id: 'novo', label: 'Novo chamado', icon: 'add_circle' });
+    items.push({ id: 'inventario', label: 'Inventário', icon: 'inventory_2' });
+    items.push({ id: 'knowledge', label: 'Base de Conhecimento', icon: 'menu_book' });
+
     if (hasPerfil('ADMIN')) {
       items.push({ id: 'empresas', label: 'Empresas', icon: 'business' });
       items.push({ id: 'tecnicos', label: 'Técnicos', icon: 'build' });
@@ -207,12 +209,19 @@
     const title = $('#page-title');
     const actions = $('#page-actions');
     actions.innerHTML = '';
-    if (page === 'chamados') {
+    if (page === 'home') {
+      title.textContent = 'Dashboard de Gestão';
+      await renderHome();
+    } else if (page === 'chamados') {
       title.textContent = 'Chamados';
       actions.innerHTML =
         '<button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-chamados">Atualizar</button>';
       $('#btn-refresh-chamados')?.addEventListener('click', () => loadChamados());
       await loadChamados();
+    } else if (page === 'knowledge') {
+      title.textContent = 'Base de Conhecimento';
+      actions.innerHTML = hasPerfil('ADMIN', 'TECNICO') ? '<button type="button" class="btn btn-primary btn-sm" id="btn-novo-artigo">Novo Artigo</button>' : '';
+      await loadKnowledge();
     } else if (page === 'novo') {
       title.textContent = 'Novo chamado';
       await loadCatalogo();
@@ -972,7 +981,7 @@
         <div class="nota-item"><span>CHAMADO:</span> <span>#${c.id_chamado}</span></div>
         <div class="nota-item"><span>DATA:</span> <span>${formatDate(c.data_abertura)}</span></div>
         <div class="nota-item"><span>CLIENTE:</span> <span>${escapeHtml(c.solicitante_nome)}</span></div>
-        <div class="nota-item"><span>EMPRESA:</span> <span>${escapeHtml(c.empresa || state.user.empresa || 'SGDB')}</span></div>
+        <div class="nota-item"><span>EMPRESA:</span> <span>${escapeHtml(c.empresa || state.user.empresa || 'KeepIT')}</span></div>
         <div class="nota-divider"></div>
         <div class="nota-item"><span>TÍTULO:</span></div>
         <p style="margin: 0.5rem 0 1rem; font-weight:bold">${escapeHtml(c.titulo)}</p>
@@ -983,7 +992,7 @@
         <div class="nota-item"><span>STATUS:</span> <span>${escapeHtml(c.status_codigo)}</span></div>
         <div class="nota-divider"></div>
         <div class="nota-footer">
-          <p>SGDB - Service Desk & Ativos</p>
+          <p>KeepIT - Service Desk & Ativos</p>
           <p>Sistema de Gestão de Chamados</p>
           <p>${new Date().toLocaleString()}</p>
         </div>
@@ -1013,11 +1022,18 @@
   function closeModal() {
     $('#modal-overlay').hidden = true;
   }
+  window.closeModal = closeModal;
 
   async function initApp() {
     showScreen('app');
     setAvatar();
     renderNav();
+    
+    // Admin Global inicia na Home por padrão
+    if (hasPerfil('ADMIN') && state.page === 'chamados') {
+      state.page = 'home';
+    }
+    
     await navigate(state.page);
   }
 
@@ -1032,6 +1048,7 @@
         body: { email: fd.get('email'), senha: fd.get('senha') },
       });
       saveSession(data.token, data.usuario);
+      if (hasPerfil('ADMIN')) state.page = 'home';
       await initApp();
     } catch (e) {
       err.textContent = e.message || 'Falha no login';
@@ -1365,6 +1382,271 @@
     } catch (e) {
       content.innerHTML = `<p class="msg-error">${escapeHtml(e.message)}</p>`;
     }
+  }
+
+  async function renderHome() {
+    const content = $('#page-content');
+    content.innerHTML = '<p class="muted">Carregando dashboard operacional…</p>';
+    try {
+      const stats = await api('/dashboard/stats');
+      const t = stats.totals;
+
+      content.innerHTML = `
+        <div class="dashboard-layout">
+          <!-- Alerta de SLA se houver pendências -->
+          ${t.sla_pendentes > 0 ? `
+            <div class="alert-banner" onclick="navigate('sla_pedidos')" style="cursor:pointer">
+              <span class="material-symbols-outlined">warning</span>
+              <span>Existem <strong>${t.sla_pendentes}</strong> solicitações de alteração de SLA pendentes de aprovação.</span>
+              <span class="material-symbols-outlined">chevron_right</span>
+            </div>
+          ` : ''}
+
+          <!-- Métricas Superiores -->
+          <div class="dashboard-grid">
+            <div class="metric-card">
+              <div class="metric-header"><span class="material-symbols-outlined">inbox</span> Total</div>
+              <div class="metric-val">${t.chamados_total}</div>
+              <div class="metric-label">Chamados Gerados</div>
+            </div>
+            <div class="metric-card accent">
+              <div class="metric-header"><span class="material-symbols-outlined">pending</span> Abertos</div>
+              <div class="metric-val">${t.chamados_abertos}</div>
+              <div class="metric-label">Aguardando Início</div>
+            </div>
+            <div class="metric-card blue">
+              <div class="metric-header"><span class="material-symbols-outlined">bolt</span> Em Curso</div>
+              <div class="metric-val">${t.chamados_em_atendimento}</div>
+              <div class="metric-label">Tickets em Execução</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-header"><span class="material-symbols-outlined">devices</span> Inventário</div>
+              <div class="metric-val">${t.ativos_total}</div>
+              <div class="metric-label">Equipamentos Cadastrados</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-header"><span class="material-symbols-outlined">corporate_fare</span> Portfólio</div>
+              <div class="metric-val">${t.empresas_total}</div>
+              <div class="metric-label">Clientes Ativos</div>
+            </div>
+          </div>
+
+          <!-- Seção Principal: Status e Tickets -->
+          <div class="dashboard-main-row">
+            <div class="card chart-section">
+              <h3 class="card-title"><span class="material-symbols-outlined">pie_chart</span> Status Global</h3>
+              <div class="chart-container"><canvas id="chart-status"></canvas></div>
+            </div>
+            
+            <div class="card table-section">
+              <div class="card-header-flex">
+                <h3 class="card-title"><span class="material-symbols-outlined">history</span> Chamados Recentes</h3>
+                <button class="btn btn-ghost btn-sm" onclick="navigate('chamados')">Ver todos</button>
+              </div>
+              <div class="table-scroll">
+                <table class="table-modern">
+                  <thead>
+                    <tr>
+                      <th>Ticket</th>
+                      <th>Assunto</th>
+                      <th>Cliente</th>
+                      <th>Status</th>
+                      <th>Abertura</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${stats.recentTickets.map(c => `
+                      <tr>
+                        <td class="td-id">#${c.id_chamado}</td>
+                        <td class="td-title" title="${escapeHtml(c.titulo)}">${escapeHtml(c.titulo)}</td>
+                        <td class="td-empresa">${escapeHtml(c.empresa)}</td>
+                        <td><span class="${badgeClass(c.status_codigo)}">${c.status_codigo}</span></td>
+                        <td class="td-date">${formatDate(c.data_abertura)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção Secundária: Técnicos e Patrimônios -->
+          <div class="dashboard-secondary-row">
+            <div class="card">
+              <h3 class="card-title"><span class="material-symbols-outlined">badge</span> Carga de Técnicos</h3>
+              <div class="list-modern">
+                ${stats.technicians.map(tec => `
+                  <div class="list-item">
+                    <div class="list-item-info">
+                      <strong>${escapeHtml(tec.nome)}</strong>
+                      <span class="muted small">${escapeHtml(tec.especialidade || 'Geral')}</span>
+                    </div>
+                    <div class="list-item-val ${tec.chamados_ativos > 3 ? 'text-warn' : ''}">
+                      ${tec.chamados_ativos} <small>tickets</small>
+                    </div>
+                  </div>
+                `).join('')}
+                ${stats.technicians.length === 0 ? '<p class="muted small">Nenhum técnico ativo.</p>' : ''}
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title"><span class="material-symbols-outlined">build</span> Patrimônios em Manutenção</h3>
+              <div class="list-modern">
+                ${stats.criticalAssets.map(a => `
+                  <div class="list-item">
+                    <div class="list-item-info">
+                      <strong>${escapeHtml(a.modelo)}</strong>
+                      <span class="muted small">${escapeHtml(a.empresa)}</span>
+                    </div>
+                    <span class="badge badge-manutencao">Manutenção</span>
+                  </div>
+                `).join('')}
+                ${stats.criticalAssets.length === 0 ? '<p class="muted small">Nenhum equipamento em manutenção.</p>' : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      setTimeout(() => {
+        if (window.Chart) {
+          const ctx = document.getElementById('chart-status').getContext('2d');
+          new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: stats.byStatus.map(s => s.label),
+              datasets: [{
+                data: stats.byStatus.map(s => s.value),
+                backgroundColor: ['#2dd4bf', '#f59e0b', '#3b82f6', '#ef4444', '#94a3b8'],
+                hoverOffset: 10,
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: '70%',
+              plugins: { 
+                legend: { 
+                  position: 'bottom', 
+                  labels: { 
+                    color: '#94a3b8', 
+                    usePointStyle: true,
+                    padding: 20,
+                    font: { size: 11, family: 'DM Sans' } 
+                  } 
+                } 
+              }
+            }
+          });
+        }
+      }, 50);
+
+    } catch (e) {
+      content.innerHTML = `<p class="msg-error">${escapeHtml(e.message)}</p>`;
+    }
+  }
+
+  async function loadKnowledge() {
+    const content = $('#page-content');
+    content.innerHTML = '<p class="muted">Carregando base de conhecimento…</p>';
+    try {
+      const articles = await api('/knowledge');
+      content.innerHTML = `
+        <div class="knowledge-list">
+          ${articles.map(a => `
+            <div class="article-card card" style="cursor: pointer" data-id="${a.id_artigo}">
+              <div style="display:flex; justify-content:space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <span class="badge" style="background: rgba(45, 212, 191, 0.1); color: var(--accent); border: 1px solid var(--accent)">${escapeHtml(a.categoria)}</span>
+                <small class="muted">${formatDate(a.criado_em)}</small>
+              </div>
+              <h3 style="margin-bottom: 0.75rem; font-size: 1.2rem; color: #fff;">${escapeHtml(a.titulo)}</h3>
+              <p class="muted small" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">
+                ${escapeHtml(a.conteudo)}
+              </p>
+              <div style="margin-top: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <div style="font-size: 0.8rem;" class="muted">Por: <strong>${escapeHtml(a.autor)}</strong></div>
+                <span class="btn btn-ghost btn-sm" style="font-size: 0.75rem;">Ler Artigo →</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      $$('.article-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const art = articles.find(x => x.id_artigo == card.dataset.id);
+          openArticleModal(art);
+        });
+      });
+
+      $('#btn-novo-artigo')?.addEventListener('click', renderNovoArtigo);
+    } catch (e) {
+      content.innerHTML = `<p class="msg-error">${escapeHtml(e.message)}</p>`;
+    }
+  }
+
+  function openArticleModal(a) {
+    const body = $('#modal-body');
+    $('#modal-title').textContent = 'Base de Conhecimento';
+    body.innerHTML = `
+      <div class="article-full" style="max-width: 800px; margin: 0 auto; padding: 1rem 0;">
+        <h1 style="font-size: 2rem; margin-bottom: 1rem; color: #fff; line-height: 1.2;">${escapeHtml(a.titulo)}</h1>
+        <div style="margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span class="badge" style="background: var(--accent); color: #042f2e;">${escapeHtml(a.categoria)}</span>
+          <span class="muted small">Publicado em <strong>${formatDate(a.criado_em)}</strong> por <strong>${escapeHtml(a.autor)}</strong></span>
+        </div>
+        <div style="line-height: 1.8; color: #e2e8f0; font-size: 1.1rem; white-space: pre-wrap; letter-spacing: 0.01em;">${escapeHtml(a.conteudo)}</div>
+        <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Fechar Leitura</button>
+        </div>
+      </div>
+    `;
+    $('#modal-overlay').hidden = false;
+  }
+
+  function renderNovoArtigo() {
+    const content = $('#page-content');
+    content.innerHTML = `
+      <div class="card" style="max-width: 800px; margin: 0 auto;">
+        <form id="form-novo-artigo" class="form-stack">
+          <label class="field">
+            <span>Título do Artigo</span>
+            <input type="text" name="titulo" required placeholder="Ex: Como configurar VPN" />
+          </label>
+          <label class="field">
+            <span>Categoria</span>
+            <input type="text" name="categoria" placeholder="Ex: Redes, Software, RH" />
+          </label>
+          <label class="field">
+            <span>Conteúdo</span>
+            <textarea name="conteudo" required style="min-height: 300px;" placeholder="Descreva o passo a passo..."></textarea>
+          </label>
+          <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary">Salvar Artigo</button>
+            <button type="button" class="btn btn-ghost" id="btn-cancel-artigo">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    $('#btn-cancel-artigo').addEventListener('click', () => navigate('knowledge'));
+    $('#form-novo-artigo').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const btn = $('button[type="submit"]', ev.target);
+      btn.disabled = true;
+      const fd = new FormData(ev.target);
+      const payload = Object.fromEntries(fd.entries());
+      try {
+        await api('/knowledge', { method: 'POST', body: payload });
+        toast('Artigo publicado com sucesso!');
+        navigate('knowledge');
+      } catch (e) {
+        toast(e.message, 'err');
+        btn.disabled = false;
+      }
+    });
   }
 
 function escapeHtml(s) {

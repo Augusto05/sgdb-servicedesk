@@ -1,10 +1,10 @@
-# SGDB - Service Desk & Controle de Ativos
+# KeepIT - Service Desk & Controle de Ativos
 
 ![Status](https://img.shields.io/badge/Status-Concluído-success)
 ![Node](https://img.shields.io/badge/Node.js-18+-green)
 ![Postgres](https://img.shields.io/badge/PostgreSQL-16-blue)
 
-Uma plataforma completa de Service Desk e Gestão de Ativos de Hardware focada em operações B2B (Multi-tenant). Desenvolvida com arquitetura robusta em Vanilla JS (Frontend) e Express + PostgreSQL (Backend).
+KeepIT é uma plataforma completa de Service Desk e Gestão de Ativos de Hardware focada em operações B2B (Multi-tenant). Desenvolvida com arquitetura robusta em Vanilla JS (Frontend) e Express + PostgreSQL (Backend).
 
 ## ✨ Principais Funcionalidades
 

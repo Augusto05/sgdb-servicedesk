@@ -1,4 +1,4 @@
-# Plataforma Service Desk (Disciplina SGDB)
+# KeepIT - Plataforma Service Desk (Disciplina SGDB)
 
 ---
 

@@ -1,8 +1,8 @@
 {
-  "name": "sgdb-service-desk",
+  "name": "keepit-service-desk",
   "version": "1.0.0",
   "private": true,
-  "description": "API Service Desk + Ativos (PostgreSQL)",
+  "description": "KeepIT — Service Desk & Ativos (PostgreSQL)",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",

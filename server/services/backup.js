@@ -18,7 +18,7 @@ const { pool } = require('../db');
 function runBackup(manual = false) {
   return new Promise(async (resolve, reject) => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileName = `sgdb_backup_${timestamp}.json`;
+    const fileName = `keepit_backup_${timestamp}.json`;
     const filePath = path.join(backupsDir, fileName);
     const start = Date.now();
     
@@ -26,7 +26,7 @@ function runBackup(manual = false) {
 
     try {
       const backupData = {
-        metadata: { gerado_em: new Date(), versao_sgdb: "1.0.0" },
+        metadata: { gerado_em: new Date(), versao_keepit: "1.0.0" },
         data: {}
       };
 
@@ -60,14 +60,14 @@ function runBackup(manual = false) {
 function runSqlBackup(manual = false) {
   return new Promise(async (resolve, reject) => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileName = `sgdb_backup_${timestamp}.sql`;
+    const fileName = `keepit_backup_${timestamp}.sql`;
     const filePath = path.join(backupsDir, fileName);
     const start = Date.now();
     
     sysLog('INFO', 'BACKUP', `Iniciando backup ${manual ? 'manual' : 'agendado'} (modo Raw SQL)`, { arquivo: fileName });
 
     try {
-      let sqlDump = `-- SGDB Raw SQL Dump\n-- Gerado em: ${new Date().toISOString()}\n\n`;
+      let sqlDump = `-- KeepIT Raw SQL Dump\n-- Gerado em: ${new Date().toISOString()}\n\n`;
 
       // 1. Estrutura das tabelas (Schema)
       const sqlDir = path.join(__dirname, '..', '..', 'sql');
@@ -139,7 +139,7 @@ function runSqlBackup(manual = false) {
  */
 function listBackups() {
   if (!fs.existsSync(backupsDir)) return [];
-  const files = fs.readdirSync(backupsDir).filter(f => f.startsWith('sgdb_backup_'));
+  const files = fs.readdirSync(backupsDir).filter(f => f.startsWith('keepit_backup_') || f.startsWith('sgdb_backup_'));
   return files.map(f => {
     const stats = fs.statSync(path.join(backupsDir, f));
     return {

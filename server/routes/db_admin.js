@@ -113,7 +113,7 @@ router.post('/backup/sql/trigger', async (req, res) => {
 // Download de Backup
 router.get('/backup/download/:file', (req, res) => {
   const file = req.params.file;
-  if (!file.startsWith('sgdb_backup_')) {
+  if (!file.startsWith('keepit_backup_') && !file.startsWith('sgdb_backup_')) {
     return res.status(400).send('Invalid file');
   }
   const filePath = path.join(backupsDir, file);
